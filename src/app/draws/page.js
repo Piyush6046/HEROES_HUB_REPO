@@ -56,30 +56,13 @@ function DrawBall({ num, delay = 0, size = "md", active = false }) {
   );
 }
 
+import { useGlobalData } from "@/context/DataContext";
+
 export default function Draws() {
-  const [draws, setDraws] = useState([]);
+  const { draws, scores: userScores, loading } = useGlobalData();
   const [expanded, setExpanded] = useState(null);
-  const [scores, setScores] = useState([]);
-  const [userScores, setUserScores] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date");
-
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
-      const [{ data: d }, { data: sc }, { data: us }] = await Promise.all([
-        supabase.from("draws").select("*").order("month_year", { ascending: false }),
-        supabase.from("scores").select("user_id, score"),
-        user ? supabase.from("scores").select("*").eq("user_id", user.id).order("date_played", { ascending: false }).limit(10) : { data: [] },
-      ]);
-      setDraws(d || []);
-      setScores(sc || []);
-      setUserScores(us || []);
-      setLoading(false);
-    }
-    init();
-  }, []);
 
   const countMatches = (winningNums, userScs) => {
     if (!winningNums || !userScs) return 0;
@@ -127,7 +110,7 @@ export default function Draws() {
   return (
     <>
       {/* Decorative Background Elements */}
-      <div style={{ position: "absolute", top: "-100px", right: "-100px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }}></div>
+      <div style={{ position: "absolute", top: "-100px", right: "-50px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }}></div>
 
       <header style={{ position: "relative", zIndex: 1, marginBottom: "40px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -269,7 +252,7 @@ export default function Draws() {
         ))}
       </div>
 
-      <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1100px", marginLeft: "0px" }}>
         {/* Historical Draws */}
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px" }}>

@@ -10,30 +10,25 @@ import {
   CheckCircle, Zap, Search, ExternalLink, Trash2, Edit3, X, Check, Award, Clock
 } from "lucide-react";
 
+import { useGlobalData } from "@/context/DataContext";
+
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState("draws"); // draws, winners, charities
-  const [users, setUsers] = useState([]);
-  const [scores, setScores] = useState([]);
-  const [draws, setDraws] = useState([]);
-  const [winners, setWinners] = useState([]);
-  const [charities, setCharities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { draws, winners, charities, scores, users, loading: dataLoading, refreshData } = useGlobalData();
+  const [activeTab, setActiveTab] = useState("draws");
+  const [localWinners, setLocalWinners] = useState([]);
   const [publishing, setPublishing] = useState(false);
   const [simulatedDraw, setSimulatedDraw] = useState(null);
-  const [drawType, setDrawType] = useState("standard"); // "standard" or "algorithmic"
-  const [editingCharity, setEditingCharity] = useState(null);
+  const [drawType, setDrawType] = useState("standard");
   const [saving, setSaving] = useState(false);
   const [showCharityModal, setShowCharityModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
+      if (!user) { router.push("/auth/login"); return; }
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -47,23 +42,14 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
-      
-      const [{ data: u }, { data: s }, { data: d }, { data: w }, { data: c }] = await Promise.all([
-        supabase.from("profiles").select("*"),
-        supabase.from("scores").select("score, user_id"),
-        supabase.from("draws").select("*").order("month_year", { ascending: false }),
-        supabase.from("winners").select("*, draws(month_year), profiles(*)").order("payout_status", { ascending: false }),
-        supabase.from("charities").select("*"),
-      ]);
-      setUsers(u || []);
-      setScores(s || []);
-      setDraws(d || []);
-      setWinners(w || []);
-      setCharities(c || []);
       setLoading(false);
     }
     checkAuth();
   }, [router]);
+
+  useEffect(() => {
+    if (winners) setLocalWinners(winners);
+  }, [winners]);
 
   const simulate = (type) => {
     const nums = type === "random"
@@ -128,11 +114,7 @@ export default function Admin() {
         alert("Error: " + data.error);
       } else {
         alert(data.message);
-        // Refresh winners list
-        const [{ data: w }] = await Promise.all([
-          supabase.from("winners").select("*, draws(month_year), profiles(*)").order("payout_status", { ascending: false })
-        ]);
-        setWinners(w || []);
+        await refreshData();
       }
     } catch (error) {
       alert("Error: " + error.message);
@@ -144,10 +126,10 @@ export default function Admin() {
     setSaving(true);
     if (editingCharity.id) {
       const { error } = await supabase.from("charities").update(editingCharity).eq("id", editingCharity.id);
-      if (!error) setCharities(charities.map(c => c.id === editingCharity.id ? editingCharity : c));
+      if (!error) await refreshData();
     } else {
       const { data, error } = await supabase.from("charities").insert(editingCharity).select().single();
-      if (!error) setCharities([...charities, data]);
+      if (!error) await refreshData();
     }
     setSaving(false);
     setShowCharityModal(false);

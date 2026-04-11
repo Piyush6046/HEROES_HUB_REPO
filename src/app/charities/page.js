@@ -4,12 +4,13 @@ import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
 import { Heart, Search, CheckCircle, ExternalLink, Sparkles, ShieldCheck, Filter, TrendingUp, Globe, Users, Award, Star, ChevronDown, ChevronUp, Info, MapPin, Mail, Phone, Calendar, Download } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+import { useGlobalData } from "@/context/DataContext";
+
 export default function Charities() {
-  const [charities, setCharities]   = useState([]);
-  const [profile, setProfile]       = useState(null);
-  const [user, setUser]             = useState(null);
+  const { user } = useAuth();
+  const { charities, profile, loading, refreshData } = useGlobalData();
   const [search, setSearch]         = useState("");
-  const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(null);
   const [aiLoading, setAiLoading]   = useState(false);
   const [aiInput, setAiInput]       = useState("");
@@ -18,27 +19,11 @@ export default function Charities() {
   const [sortBy, setSortBy]         = useState("name"); // name, featured, category
   const [viewMode, setViewMode]     = useState("grid"); // grid, list
 
-  useEffect(() => {
-    async function init() {
-      const { data } = await supabase.auth.getUser();
-      const u = data?.user;
-      setUser(u);
-      const [{ data: c }, { data: p }] = await Promise.all([
-        supabase.from("charities").select("*"),
-        u ? supabase.from("profiles").select("*").eq("id", u.id).maybeSingle() : { data: null },
-      ]);
-      setCharities(c || []);
-      setProfile(p);
-      setLoading(false);
-    }
-    init();
-  }, []);
-
   const setPrimary = async (id) => {
     if (!user) return;
     setSaving(id);
     await supabase.from("profiles").update({ charity_id: id }).eq("id", user.id);
-    setProfile((p) => ({ ...p, charity_id: id }));
+    await refreshData();
     setSaving(null);
   };
 

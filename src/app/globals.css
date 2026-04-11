@@ -47,7 +47,23 @@
   --r-xl: 32px;
 
   /* Sidebar */
-  --sidebar-w: 260px;
+  --sidebar-w: 320px;
+}
+
+.page-main {
+  flex: 1;
+  background: var(--bg-app);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.content-shift {
+  margin-left: var(--sidebar-w) !important;
+}
+
+@media (max-width: 1024px) {
+  .content-shift { margin-left: 0 !important; }
 }
 
 [data-theme="light"] {

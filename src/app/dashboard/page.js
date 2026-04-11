@@ -20,13 +20,14 @@ function getRank(xp) {
   return rank;
 }
 
+import { useAuth } from "@/context/AuthContext";
+import { useGlobalData } from "@/context/DataContext";
+
 export default function Dashboard() {
   const router = useRouter();
-  const [user, setUser]     = useState(null);
-  const [scores, setScores] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const { user } = useAuth();
+  const { scores, profile, loading, refreshData } = useGlobalData();
   const [newScore, setNewScore] = useState("");
-  const [loading, setLoading]   = useState(true);
   const [insight, setInsight]   = useState("");
   const [insightLoading, setInsightLoading] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
@@ -50,44 +51,32 @@ export default function Dashboard() {
     }
   };
 
-  const fetchData = useCallback(async (u) => {
-    const [{ data: s }, { data: p }] = await Promise.all([
-      supabase.from("scores").select("*").eq("user_id", u.id).order("date_played", { ascending: false }).limit(6),
-      supabase.from("profiles").select("*").eq("id", u.id).maybeSingle(),
-    ]);
-    setScores(s || []);
-    setProfile(p);
-    
-    const xp = (s || []).length * 50 + (p?.charity_id ? 100 : 0);
-    fetchAIAdvice(s || [], getRank(xp).label);
-  }, []);
+  useEffect(() => {
+    if (scores.length > 0 && profile) {
+      const xp = scores.length * 50 + (profile?.charity_id ? 100 : 0);
+      fetchAIAdvice(scores, getRank(xp).label);
+    }
+  }, [scores, profile]);
+
+  const handleCheckoutSuccess = async (uId) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("checkout") === "success") {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ subscription_status: "active" })
+        .eq("id", uId);
+      
+      if (!error) {
+        alert("🎉 Welcome Aboard! Your subscription is now active.");
+        refreshData();
+      }
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    const handleCheckoutSuccess = async (uId) => {
-      if (urlParams.get("checkout") === "success") {
-        const { error } = await supabase
-          .from("profiles")
-          .update({ subscription_status: "active" })
-          .eq("id", uId);
-        
-        if (!error) {
-          alert("🎉 Welcome Aboard! Your subscription is now active.");
-          await fetchData({ id: uId });
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    };
-
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data?.user) return router.push("/auth/login");
-      setUser(data.user);
-      await fetchData(data.user);
-      await handleCheckoutSuccess(data.user.id);
-      setLoading(false);
-    });
-  }, [router, fetchData]);
+    if (user) handleCheckoutSuccess(user.id);
+  }, [user]);
 
   const logRound = async (e) => {
     e.preventDefault();
@@ -149,7 +138,7 @@ export default function Dashboard() {
       // Reset and refresh
       setNewScore("");
       setShowScoreModal(false);
-      await fetchData(user);
+      await refreshData();
       fetchAiInsight();
 
     } catch (error) {
@@ -195,7 +184,7 @@ export default function Dashboard() {
         <div className="flex-between mb-8" style={{ flexWrap: "wrap", gap: "16px" }}>
           <div>
             <h1 className="page-title">Dashboard</h1>
-            <p className="page-subtitle">Welcome back, {user.email?.split("@")[0]}</p>
+            <p className="page-subtitle">Welcome back, {user?.email?.split("@")[0] || "Golfer"}</p>
           </div>
           <button onClick={() => setShowScoreModal(true)} className="btn btn-primary" style={{ gap: "8px" }}>
             <Plus size={18} /> Log Round
@@ -370,7 +359,7 @@ export default function Dashboard() {
               <div className="card-header">
                 <h3 style={{ fontSize: "16px" }}>Active Winnings</h3>
               </div>
-              <EnhancedWinnings userId={user.id} />
+              {user && <EnhancedWinnings userId={user.id} />}
             </div>
           </div>
         </div>
