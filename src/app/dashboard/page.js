@@ -180,6 +180,7 @@ export default function Dashboard() {
   const trend = scores.length >= 2 ? scores[0].score - scores[1].score : 0;
 
   return (
+    <div style={{marginLeft:"-60px"}}>  
     <>
         <div className="flex-between mb-8" style={{ flexWrap: "wrap", gap: "16px" }}>
           <div>
@@ -375,7 +376,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </>
+    </>  </div>
+    
   );
 }
 

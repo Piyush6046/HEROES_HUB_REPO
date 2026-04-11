@@ -155,12 +155,15 @@ export default function Admin() {
   }
 
   return (
-    <>
+    <div style={{marginLeft:"-60px"}}> 
+     <>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
           <ShieldCheck size={24} color="var(--green-500)" />
           <h1 className="page-title" style={{ margin: 0 }}>Admin Console</h1>
         </div>
       <EnhancedAdminWithFunctionality />
     </>
+      </div> 
+   
   );
 }

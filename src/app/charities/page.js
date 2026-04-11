@@ -75,13 +75,14 @@ export default function Charities() {
   );
 
   return (
-    <>
+    <div style={{marginLeft:"-60px"}}>
+          <>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
           <Heart size={24} color="var(--red-500)" />
           <h1 className="page-title">Charity Partners</h1>
         </div>
-        <p className="page-subtitle">Select your cause - 15% of your subscription goes here every month.</p>
+        <p style={{marginBottom:"20px"}} className="page-subtitle">Select your cause - 15% of your subscription goes here every month.</p>
 
         {/* Stats Overview */}
         <div className="grid-4 mb-6">
@@ -370,5 +371,7 @@ export default function Charities() {
           </div>
         )}
     </>
+      </div>
+
   );
 }
