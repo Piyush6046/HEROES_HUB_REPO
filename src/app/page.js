@@ -65,7 +65,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <main style={{ background: "var(--bg-void)", minHeight: "100vh", paddingTop: "70px" }}>
+    <div style={{ background: "var(--bg-void)", minHeight: "100vh" }}>
       {/* ── HERO ── */}
       <section className="hero-section">
         <div className="hero-glow-1" />
@@ -215,6 +215,6 @@ export default function LandingPage() {
         <span style={{ fontFamily: "Outfit", fontWeight: 900, color: "var(--text-3)", fontSize: "16px" }}>HeroesHub</span>
         <span style={{ color: "var(--text-3)", fontSize: "13px" }}>© 2026 HeroesHub · Built for Digital Heroes Selection Process</span>
       </footer>
-    </main>
+    </div>
   );
 }

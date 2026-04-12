@@ -9,7 +9,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
 
-  const hiddenRoutes = ["/dashboard", "/admin", "/charities", "/draws"];
+  const hiddenRoutes = ["/dashboard", "/admin", "/charities", "/draws", "/auth"];
   const isHidden = hiddenRoutes.some((r) => pathname.startsWith(r));
 
   useEffect(() => {

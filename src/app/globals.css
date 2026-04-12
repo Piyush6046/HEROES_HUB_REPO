@@ -52,14 +52,16 @@
 
 .page-main {
   flex: 1;
-  background: var(--bg-app);
+  background: var(--bg-void);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
+  margin-left: 0; /* Default for public pages */
 }
 
 .content-shift {
   margin-left: var(--sidebar-w) !important;
+  background: var(--bg-app);
 }
 
 @media (max-width: 1024px) {
@@ -124,17 +126,9 @@ button { font-family: inherit; }
   min-height: 100vh;
 }
 
-.page-main {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  min-height: 100vh;
-  padding: 40px 48px;
-  position: relative;
-}
-
 /* ─────────────────── SIDEBAR ─────────────────── */
 .sidebar {
-  width: var(--sidebar-w);
+  width: 280px;
   height: 100vh;
   position: fixed;
   top: 0;
@@ -143,7 +137,7 @@ button { font-family: inherit; }
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  padding: 28px 20px;
+  padding: 28px 10px;
   z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
