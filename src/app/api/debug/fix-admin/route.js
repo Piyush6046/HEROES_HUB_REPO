@@ -5,7 +5,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('profiles')
     .update({ role: 'admin' })
-    .eq('email', 'admin@gmial.com')
+    .eq('email', 'admin@gmail.com')
     .select();
 
   return NextResponse.json({ data, error });

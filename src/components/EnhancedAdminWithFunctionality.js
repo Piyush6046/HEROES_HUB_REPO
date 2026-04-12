@@ -27,16 +27,16 @@ export default function EnhancedAdminWithFunctionality() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
-  
+
   // Filters State
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [userPlanFilter, setUserPlanFilter] = useState("all");
   const [userSortBy, setUserSortBy] = useState("name");
-  
+
   const [winnerStatusFilter, setWinnerStatusFilter] = useState("all");
   const [winnerTierFilter, setWinnerTierFilter] = useState("all");
   const [winnerSortBy, setWinnerSortBy] = useState("recent");
-  
+
   const [charityCategoryFilter, setCharityCategoryFilter] = useState("all");
   const [charityStatusFilter, setCharityStatusFilter] = useState("all");
   const [charitySortBy, setCharitySortBy] = useState("name");
@@ -75,7 +75,7 @@ export default function EnhancedAdminWithFunctionality() {
   const charityPool = totalPool * 0.15;
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = userStatusFilter === "all" || user.subscription_status === userStatusFilter;
     const matchesPlan = userPlanFilter === "all" || user.subscription_plan === userPlanFilter;
@@ -87,7 +87,7 @@ export default function EnhancedAdminWithFunctionality() {
   });
 
   const filteredWinners = winners.filter(winner => {
-    const matchesSearch = winner.profiles?.full_name?.toLowerCase().includes(searchWinner.toLowerCase()) || 
+    const matchesSearch = winner.profiles?.full_name?.toLowerCase().includes(searchWinner.toLowerCase()) ||
                           winner.profiles?.email?.toLowerCase().includes(searchWinner.toLowerCase());
     const matchesStatus = winnerStatusFilter === "all" || winner.payout_status === winnerStatusFilter;
     const matchesTier = winnerTierFilter === "all" || winner.match_type === winnerTierFilter;
@@ -99,10 +99,10 @@ export default function EnhancedAdminWithFunctionality() {
   });
 
   const filteredCharities = charities.filter(charity => {
-    const matchesSearch = charity.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = charity.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           charity.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = charityCategoryFilter === "all" || charity.category === charityCategoryFilter;
-    const matchesFeatured = charityStatusFilter === "all" || 
+    const matchesFeatured = charityStatusFilter === "all" ||
                             (charityStatusFilter === "featured" ? charity.is_featured : !charity.is_featured);
     return matchesSearch && matchesCategory && matchesFeatured;
   }).sort((a, b) => {
@@ -205,7 +205,7 @@ export default function EnhancedAdminWithFunctionality() {
       } else {
         // Optimistic UI update for instant feedback
         setWinners(prev => prev.map(w => w.id === winId ? { ...w, payout_status: status } : w));
-        
+
         // Background sync to ensure data integrity
         const { data: w } = await supabase
           .from("winners")
@@ -221,7 +221,7 @@ export default function EnhancedAdminWithFunctionality() {
   const saveCharity = async (e) => {
     e.preventDefault();
     setSaving(true);
-    
+
     // Clean up the object to only include columns that exist in the database
     const { name, category, description, logo_url, website_url, is_featured, id } = editingCharity;
     const charityData = { name, category, description, logo_url, website_url, is_featured };
@@ -232,7 +232,7 @@ export default function EnhancedAdminWithFunctionality() {
           .from("charities")
           .update(charityData)
           .eq("id", id);
-        
+
         if (error) throw error;
         setCharities(charities.map(c => c.id === id ? { ...c, ...charityData } : c));
         alert("Charity updated successfully!");
@@ -242,7 +242,7 @@ export default function EnhancedAdminWithFunctionality() {
           .insert([charityData])
           .select()
           .single();
-        
+
         if (error) throw error;
         setCharities([...charities, data]);
         alert("Charity added successfully!");
@@ -280,7 +280,7 @@ export default function EnhancedAdminWithFunctionality() {
 
   const downloadCSV = (data, filename) => {
     if (!data || data.length === 0) return alert("No data to export");
-    
+
     const headers = Object.keys(data[0]);
     const csvRows = [
       headers.join(','),
@@ -289,7 +289,7 @@ export default function EnhancedAdminWithFunctionality() {
         return `"${val !== null && val !== undefined ? String(val).replace(/"/g, '""') : ''}"`;
       }).join(','))
     ];
-    
+
     const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -378,8 +378,8 @@ export default function EnhancedAdminWithFunctionality() {
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
             {activeTab === 'users' && (
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 style={{ gap: "8px" }}
                 onClick={() => alert("Add User feature coming soon! Currently managed via Auth.")}
               >
@@ -387,8 +387,8 @@ export default function EnhancedAdminWithFunctionality() {
               </button>
             )}
             {activeTab === 'winners' && (
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 style={{ gap: "8px" }}
                 onClick={() => {
                   const pending = winners.filter(w => w.payout_status === 'pending');
@@ -402,7 +402,7 @@ export default function EnhancedAdminWithFunctionality() {
               </button>
             )}
             {activeTab === 'charities' && (
-              <button 
+              <button
                 onClick={() => {
                   setEditingCharity({
                     name: "",
@@ -415,19 +415,19 @@ export default function EnhancedAdminWithFunctionality() {
                     impact_area: ""
                   });
                   setShowCharityModal(true);
-                }} 
-                className="btn btn-primary" 
+                }}
+                className="btn btn-primary"
                 style={{ gap: "8px" }}
               >
                 <Plus size={16} /> Add Charity
               </button>
             )}
-            <button 
-              className="btn btn-ghost" 
+            <button
+              className="btn btn-ghost"
               style={{ gap: "8px" }}
               onClick={() => {
-                const dataToExport = activeTab === 'users' ? users : 
-                                    activeTab === 'winners' ? winners : 
+                const dataToExport = activeTab === 'users' ? users :
+                                    activeTab === 'winners' ? winners :
                                     activeTab === 'draws' ? draws : charities;
                 downloadCSV(dataToExport, activeTab);
               }}
@@ -575,7 +575,7 @@ export default function EnhancedAdminWithFunctionality() {
               <h3 style={{ fontSize: "18px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
                 <Zap size={20} color="var(--gold-400)" /> Execute New Draw
               </h3>
-              
+
               <div style={{ marginBottom: "24px" }}>
                 <label className="label">Configuration Profile</label>
                 <select className="input" value={drawType} onChange={e => setDrawType(e.target.value)}>
@@ -583,8 +583,8 @@ export default function EnhancedAdminWithFunctionality() {
                   <option value="algorithmic">Dynamic Engagement Draw (Algorithmic)</option>
                 </select>
                 <p style={{ fontSize: "12px", color: "var(--text-3)", marginTop: "8px" }}>
-                  {drawType === 'standard' 
-                    ? "Uses pure random seed for number generation. Fair and consistent." 
+                  {drawType === 'standard'
+                    ? "Uses pure random seed for number generation. Fair and consistent."
                     : "Weights selection based on user score frequency and consistency."}
                 </p>
               </div>
@@ -608,10 +608,10 @@ export default function EnhancedAdminWithFunctionality() {
                 <button onClick={() => simulate(drawType)} className="btn btn-secondary" style={{ flex: 1, gap: "8px" }}>
                   <Shuffle size={16} /> Run Simulation
                 </button>
-                <button 
-                  onClick={publish} 
-                  className="btn btn-primary" 
-                  disabled={publishing || !simulatedDraw} 
+                <button
+                  onClick={publish}
+                  className="btn btn-primary"
+                  disabled={publishing || !simulatedDraw}
                   style={{ flex: 1.5, gap: "8px" }}
                 >
                   {publishing ? <Activity className="animate-spin" size={16} /> : <Globe size={16} />}
@@ -625,7 +625,7 @@ export default function EnhancedAdminWithFunctionality() {
                 <h3 style={{ fontSize: "18px" }}>Prize Distribution Preview</h3>
                 {simulatedDraw && <span className="badge badge-green">LIVE ESTIMATE</span>}
               </div>
-              
+
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {[
                   { tier: "5-Match Jackpot", weight: "40%", pool: totalPool * 0.4, color: "#10b981" },
@@ -810,9 +810,9 @@ export default function EnhancedAdminWithFunctionality() {
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "4px" }}>
-                          <button 
-                            className="btn btn-icon" 
-                            title="View Details" 
+                          <button
+                            className="btn btn-icon"
+                            title="View Details"
                             style={{ color: "var(--blue-400)" }}
                             onClick={() => alert(`Full audit trail for winner: ${winner.profiles?.full_name}\nPrize: ${formatCurrency(winner.prize_amount)}\nMatch: ${winner.match_type}`)}
                           >
@@ -848,9 +848,9 @@ export default function EnhancedAdminWithFunctionality() {
                               <X size={14} />
                             </button>
                           )}
-                          <button 
-                            className="btn btn-icon" 
-                            title="Send Email" 
+                          <button
+                            className="btn btn-icon"
+                            title="Send Email"
                             style={{ color: "var(--purple-400)" }}
                             onClick={() => alert(`Email composition opened for ${winner.profiles?.email}`)}
                           >
@@ -878,9 +878,9 @@ export default function EnhancedAdminWithFunctionality() {
                 Manage partner charities and their impact goals
               </p>
             </div>
-            <button 
-              className="btn btn-primary" 
-              style={{ gap: "8px" }} 
+            <button
+              className="btn btn-primary"
+              style={{ gap: "8px" }}
               onClick={() => {
                 setEditingCharity({
                   name: "",
@@ -993,7 +993,7 @@ export default function EnhancedAdminWithFunctionality() {
                   </p>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-    
+
                     <div>
                       <div style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "4px" }}>Users</div>
                       <div style={{ fontSize: "14px", color: "var(--text-0)" }}>
@@ -1011,10 +1011,10 @@ export default function EnhancedAdminWithFunctionality() {
                     </button>
                     <button
                       className="btn btn-ghost"
-                      style={{ 
-                        width: "36px", 
-                        height: "36px", 
-                        borderRadius: "6px", 
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "6px",
                         border: "1px solid var(--border-default)",
                         display: "flex",
                         alignItems: "center",
@@ -1167,9 +1167,9 @@ export default function EnhancedAdminWithFunctionality() {
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "4px" }}>
-                          <button 
-                            className="btn btn-icon" 
-                            title="Manage User" 
+                          <button
+                            className="btn btn-icon"
+                            title="Manage User"
                             style={{ color: "var(--blue-400)" }}
                             onClick={() => {
                               setSelectedUser(user);
@@ -1178,9 +1178,9 @@ export default function EnhancedAdminWithFunctionality() {
                           >
                             <Settings size={14} />
                           </button>
-                          <button 
-                            className="btn btn-icon" 
-                            title="View User" 
+                          <button
+                            className="btn btn-icon"
+                            title="View User"
                             style={{ color: "var(--blue-400)" }}
                             onClick={() => {
                               setSelectedUser(user);
@@ -1189,9 +1189,9 @@ export default function EnhancedAdminWithFunctionality() {
                           >
                             <Eye size={14} />
                           </button>
-                          <button 
-                            className="btn btn-icon" 
-                            title="Edit User" 
+                          <button
+                            className="btn btn-icon"
+                            title="Edit User"
                             style={{ color: "var(--green-400)" }}
                             onClick={() => {
                               setSelectedUser(user);
@@ -1200,9 +1200,9 @@ export default function EnhancedAdminWithFunctionality() {
                           >
                             <Edit size={14} />
                           </button>
-                          <button 
-                            className="btn btn-icon" 
-                            title="Delete User" 
+                          <button
+                            className="btn btn-icon"
+                            title="Delete User"
                             style={{ color: "var(--rose-400)" }}
                             onClick={() => deleteUser(user.id, user.full_name || user.email)}
                           >
@@ -1553,7 +1553,7 @@ export default function EnhancedAdminWithFunctionality() {
               <h2 style={{ fontSize: "24px", fontWeight: 800 }}>User Profile</h2>
               <button className="btn btn-icon" onClick={() => setShowUserModal(false)}><X size={20} /></button>
             </div>
-            
+
             <div style={{ display: "flex", gap: "24px", marginBottom: "32px" }}>
               <div style={{ width: "80px", height: "80px", borderRadius: "20px", background: "var(--bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 800, color: "var(--blue-400)" }}>
                 {selectedUser.full_name?.[0] || selectedUser.email?.[0]}
@@ -1623,17 +1623,17 @@ export default function EnhancedAdminWithFunctionality() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
                 <div>
                   <label className="label">Full Name</label>
-                  <input 
-                    className="input" 
-                    value={selectedUser.full_name || ""} 
+                  <input
+                    className="input"
+                    value={selectedUser.full_name || ""}
                     onChange={e => setSelectedUser({...selectedUser, full_name: e.target.value})}
                   />
                 </div>
                 <div>
                   <label className="label">Administrative Role</label>
-                  <select 
-                    className="input" 
-                    value={selectedUser.role || "user"} 
+                  <select
+                    className="input"
+                    value={selectedUser.role || "user"}
                     onChange={e => setSelectedUser({...selectedUser, role: e.target.value})}
                   >
                     <option value="user">User</option>
@@ -1642,9 +1642,9 @@ export default function EnhancedAdminWithFunctionality() {
                 </div>
                 <div>
                   <label className="label">Subscription Status</label>
-                  <select 
-                    className="input" 
-                    value={selectedUser.subscription_status} 
+                  <select
+                    className="input"
+                    value={selectedUser.subscription_status}
                     onChange={e => setSelectedUser({...selectedUser, subscription_status: e.target.value})}
                   >
                     <option value="active">Active</option>
@@ -1660,11 +1660,11 @@ export default function EnhancedAdminWithFunctionality() {
                   {scores.filter(s => s.user_id === selectedUser.id).map((score, idx) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-raised)", padding: "10px", borderRadius: "8px" }}>
                       <span style={{ fontSize: "12px", color: "var(--text-3)", width: "60px" }}>Round {idx + 1}</span>
-                      <input 
-                        type="number" 
-                        className="input" 
-                        style={{ width: "80px", height: "32px" }} 
-                        value={score.score} 
+                      <input
+                        type="number"
+                        className="input"
+                        style={{ width: "80px", height: "32px" }}
+                        value={score.score}
                         onChange={(e) => {
                           const newScore = parseInt(e.target.value);
                           const updatedScores = [...scores];

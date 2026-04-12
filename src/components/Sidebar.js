@@ -105,7 +105,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {role?.toLowerCase() !== "admin" && user?.email === "admin@gmial.com" && (
+        {role?.toLowerCase() !== "admin" && user?.email === "admin@gmail.com" && (
           <button 
             onClick={async () => {
               const { error } = await supabase.from("profiles").update({ role: "admin" }).eq("id", user.id);

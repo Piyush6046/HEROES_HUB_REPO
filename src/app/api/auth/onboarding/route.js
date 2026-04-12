@@ -23,28 +23,34 @@ export async function POST(req) {
 
     console.log(`Onboarding user: ${userId}, plan: ${planId}, charity: ${charityId}`);
 
-    // 1. Create or update user profile
+    // 1. Fetch existing profile to preserve stats and role
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // 2. Prepare the update/upsert data
+    // We only want to set these defaults if it's a NEW user
     const profileData = {
       id: userId,
       email: email,
-      full_name: fullName || email.split("@")[0],
-      charity_id: charityId,
-      contribution_percentage: contribution,
-      subscription_status: 'pending',
-      subscription_plan: planId,
-      role: 'user',
-      xp_points: 0,
-      current_rank: 'Rookie',
-      rounds_played: 0,
+      // Priority: (Existing row) > (New input) > (Email fallback)
+      full_name: existingProfile?.full_name || fullName || email.split("@")[0],
+      charity_id: existingProfile?.charity_id || charityId,
+      contribution_percentage: existingProfile?.contribution_percentage || contribution || 15,
+      subscription_status: existingProfile?.subscription_status || 'pending',
+      subscription_plan: existingProfile?.subscription_plan || planId || 'monthly',
+      role: existingProfile?.role || 'user',
+      xp_points: existingProfile?.xp_points || 0,
+      current_rank: existingProfile?.current_rank || 'Rookie',
+      rounds_played: existingProfile?.rounds_played || 0,
       updated_at: new Date().toISOString()
     };
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .upsert(profileData, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      })
+      .upsert(profileData)
       .select()
       .single();
 
