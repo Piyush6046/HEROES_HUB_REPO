@@ -18,7 +18,7 @@ const NAV = [
 
 import { useAuth } from "@/context/AuthContext";
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen }) {
   const pathname = usePathname();
   const router   = useRouter();
   const { user, role, loading } = useAuth();
@@ -42,7 +42,7 @@ export default function Sidebar() {
   const username = user?.email?.split("@")[0] || "Player";
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand */}
       <div className="sidebar-brand">
         <div className="sidebar-logo">G</div>

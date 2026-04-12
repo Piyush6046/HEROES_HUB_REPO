@@ -30,18 +30,22 @@ export default function LoginPage() {
       setError(authError.message); 
       setLoading(false); 
     } else {
-      // Pulse Check: Ensure Profile Always Exists (Self-Healing)
-      // We call our onboarding API internally to guarantee a profile row exists
-      await fetch("/api/auth/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          email: user.email,
-          fullName: user.user_metadata?.full_name || user.email.split("@")[0]
-        })
-      });
-      router.push("/dashboard");
+      try {
+        // Pulse Check: Ensure Profile Always Exists (Self-Healing)
+        // This is non-blocking to prevent UI hang
+        fetch("/api/auth/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            userId: user.id, 
+            email: user.email,
+            fullName: user.user_metadata?.full_name || user.email.split("@")[0]
+          })
+        }).catch(err => console.error("Onboarding error:", err));
+      } catch (e) {}
+
+      // Force push to dashboard
+      window.location.href = "/dashboard";
     }
   };
 
@@ -49,7 +53,7 @@ export default function LoginPage() {
     <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-void)" }}>
 
       {/* ── LEFT BRAND PANEL ── */}
-      <div style={{
+      <div className="desktop-only" style={{
         width: "45%", minHeight: "100vh", background: "linear-gradient(160deg, #0d2418 0%, #020408 60%, #0d1a2e 100%)",
         display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px",
         position: "relative", overflow: "hidden",

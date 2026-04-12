@@ -113,7 +113,7 @@ export default function Draws() {
       <div style={{ position: "absolute", top: "-100px", right: "-50px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }}></div>
 
       <header style={{ position: "relative", zIndex: 1, marginBottom: "40px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
               <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(16,185,129,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -124,11 +124,11 @@ export default function Draws() {
             <h1 className="page-title">Luck of the Course</h1>
             <p className="page-subtitle">Your monthly prize draws and score matching results</p>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button className="btn btn-ghost" style={{ gap: "8px" }}>
+          <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "400px" }} className="flex-mobile-stack">
+            <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }}>
               <Download size={16} /> Export
             </button>
-            <button className="btn btn-primary" style={{ gap: "8px" }}>
+            <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }}>
               <Sparkles size={16} /> How it works
             </button>
           </div>
@@ -144,8 +144,20 @@ export default function Draws() {
           padding: "0",
           overflow: "hidden"
         }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 350px", gap: "0" }}>
-            <div style={{ padding: "32px", position: "relative" }}>
+          <div className="grid-draw-featured">
+            <style jsx>{`
+              .grid-draw-featured {
+                display: grid;
+                grid-template-columns: 1fr 350px;
+                gap: 0;
+              }
+              @media (max-width: 1024px) {
+                .grid-draw-featured {
+                  grid-template-columns: 1fr;
+                }
+              }
+            `}</style>
+            <div style={{ padding: "clamp(20px, 5vw, 32px)", position: "relative" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
                 <span className="badge badge-green">LATEST DRAW</span>
                 <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-2)" }}>{latestDraw.month_year}</span>
@@ -153,7 +165,7 @@ export default function Draws() {
 
               <h2 style={{ fontSize: "28px", marginBottom: "32px" }}>Winning Numbers</h2>
 
-              <div style={{ display: "flex", gap: "16px", marginBottom: "40px" }}>
+              <div style={{ display: "flex", gap: "16px", marginBottom: "40px", flexWrap: "wrap", justifyContent: "center" }}>
                 {latestDraw.winning_numbers.map((num, i) => (
                   <DrawBall
                     key={i}
@@ -165,7 +177,7 @@ export default function Draws() {
                 ))}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+              <div className="grid-3" style={{ gap: "24px" }}>
                 <div>
                   <div style={{ fontSize: "12px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px" }}>5-Match Jackpot</div>
                   <div style={{ fontSize: "24px", fontWeight: 900, color: "var(--green-400)", fontFamily: "'Outfit'" }}>
@@ -190,7 +202,7 @@ export default function Draws() {
             <div style={{
               background: "rgba(16,185,129,0.03)",
               borderLeft: "1px solid var(--border-default)",
-              padding: "32px",
+              padding: "clamp(20px, 5vw, 32px)",
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
@@ -255,18 +267,18 @@ export default function Draws() {
       <div style={{ maxWidth: "1100px", marginLeft: "0px" }}>
         {/* Historical Draws */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px", gap: "20px" }}>
             <h3 style={{ fontSize: "24px", fontWeight: 800 }}>Historical Archive</h3>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", width: "100%", maxWidth: "400px" }}>
+              <div style={{ position: "relative", flex: 1, minWidth: "120px" }}>
                 <Filter size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
-                <select className="input" style={{ width: "160px", paddingLeft: "36px" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <select className="input" style={{ width: "100%", paddingLeft: "36px" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                   <option value="all">All Status</option>
                   <option value="completed">Completed</option>
                   <option value="pending">Pending</option>
                 </select>
               </div>
-              <select className="input" style={{ width: "160px" }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+              <select className="input" style={{ flex: 1.5, minWidth: "160px" }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="date">Most Recent First</option>
                 <option value="prize">Highest Prize Pool</option>
                 <option value="matches">Most Matchings</option>
@@ -289,10 +301,10 @@ export default function Draws() {
 
                 return (
                   <div key={draw.id} className="card animate-fade-up" style={{ padding: "0", cursor: "pointer", transition: "transform 0.2s ease" }} onClick={() => setExpanded(isExpanded ? null : draw.id)}>
-                    <div style={{ padding: "24px 32px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ padding: "clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px)" }}>
+                      <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                          <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "var(--bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-subtle)" }}>
+                          <div className="desktop-only" style={{ width: "56px", height: "56px", borderRadius: "16px", background: "var(--bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-subtle)" }}>
                             <Calendar size={24} color="var(--text-2)" />
                           </div>
                           <div>
@@ -308,19 +320,18 @@ export default function Draws() {
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: "40px", alignItems: "center" }}>
+                        <div className="flex-between" style={{ gap: "clamp(16px, 5vw, 40px)", alignItems: "center", width: "100%", justifyContent: "flex-end" }}>
                           <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Prize Pool</div>
-                            <div style={{ fontSize: "20px", fontWeight: 900, color: "var(--green-400)" }}>${draw.total_pool?.toLocaleString() || "0"}</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Prize Pool</div>
+                            <div style={{ fontSize: "16px", fontWeight: 900, color: "var(--green-400)" }}>${draw.total_pool?.toLocaleString() || "0"}</div>
                           </div>
-                          <div style={{ width: "1px", height: "40px", background: "var(--border-subtle)" }}></div>
                           <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Matched</div>
-                            <div style={{ fontSize: "20px", fontWeight: 900, color: getTierInfo(matches).color }}>
+                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Matched</div>
+                            <div style={{ fontSize: "16px", fontWeight: 900, color: getTierInfo(matches).color }}>
                               {matches} Balls
                             </div>
                           </div>
-                          <button className="btn btn-icon" style={{ background: "var(--bg-raised)", border: "1px solid var(--border-subtle)", borderRadius: "10px" }}>
+                          <button className="btn btn-icon" style={{ background: "var(--bg-raised)", border: "1px solid var(--border-subtle)", borderRadius: "10px", width: "40px", height: "40px" }}>
                             {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                           </button>
                         </div>

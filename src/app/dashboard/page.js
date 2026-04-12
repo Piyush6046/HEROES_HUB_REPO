@@ -180,7 +180,7 @@ export default function Dashboard() {
   const trend = scores.length >= 2 ? scores[0].score - scores[1].score : 0;
 
   return (
-    <div style={{marginLeft:"-60px"}}>  
+    <div className="dashboard-container">  
     <>
         <div className="flex-between mb-8" style={{ flexWrap: "wrap", gap: "16px" }}>
           <div>
@@ -252,7 +252,21 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid-2" style={{ gridTemplateColumns: "1.5fr 1fr", alignItems: "start", gap: "24px", marginBottom: "32px" }}>
+        <div className="grid-sidebar-layout">
+          <style jsx>{`
+            .grid-sidebar-layout {
+              display: grid;
+              grid-template-columns: 1.5fr 1fr;
+              align-items: start;
+              gap: 24px;
+              margin-bottom: 32px;
+            }
+            @media (max-width: 1024px) {
+              .grid-sidebar-layout {
+                grid-template-columns: 1fr;
+              }
+            }
+          `}</style>
           {/* Main Activity Column */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             <div className="card">

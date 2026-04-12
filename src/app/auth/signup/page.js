@@ -101,7 +101,7 @@ export default function SignupPage() {
     <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-void)" }}>
 
       {/* ── LEFT BRAND PANEL ── */}
-      <div style={{
+      <div className="desktop-only" style={{
         width: "40%", minHeight: "100vh",
         background: "linear-gradient(160deg, #0d2418 0%, #020408 60%, #0d1a2e 100%)",
         display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px",

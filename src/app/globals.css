@@ -66,6 +66,14 @@
 
 @media (max-width: 1024px) {
   .content-shift { margin-left: 0 !important; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 60px rgba(0,0,0,0.5);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
 }
 
 [data-theme="light"] {
@@ -124,6 +132,25 @@ button { font-family: inherit; }
 .app-shell {
   display: flex;
   min-height: 100vh;
+}
+
+.flex-mobile-stack {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .flex-mobile-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* ─────────────────── SIDEBAR ─────────────────── */
@@ -607,7 +634,13 @@ button { font-family: inherit; }
 }
 
 /* ─────────────────── TABLE ─────────────────── */
-.data-table { width: 100%; border-collapse: collapse; }
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+.data-table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .data-table th {
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
   color: var(--text-3); padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); text-align: left;
@@ -669,9 +702,23 @@ button { font-family: inherit; }
 .text-indigo { color: #818cf8; }
 .text-muted  { color: var(--text-3); }
 
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+/* Grid Utilities */
+.grid-2, .grid-3, .grid-4 { 
+  display: grid; 
+  gap: 20px; 
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 900px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
 
 .flex-center { display: flex; align-items: center; justify-content: center; }
 .flex-between { display: flex; align-items: center; justify-content: space-between; }
@@ -686,3 +733,70 @@ button { font-family: inherit; }
 .mb-6 { margin-bottom: 24px; }
 .mb-8 { margin-bottom: 32px; }
 .mb-10{ margin-bottom: 40px; }
+
+/* Mobile Overrides */
+@media (max-width: 768px) {
+  .page-title { font-size: 24px; }
+  .modal { padding: 24px; padding-top: 40px; }
+  .btn-lg { padding: 12px 24px; font-size: 14px; }
+  .hero-section { padding: 100px 5% 40px; text-align: center; display: flex; flex-direction: column; justify-content: flex-start; }
+  .hero-section > div { margin: 0 auto !important; text-align: center; }
+  .hero-section h1 { letter-spacing: -1px; margin-bottom: 20px; }
+  .hero-section p { margin: 0 auto 32px !important; }
+  .hero-section .btn { width: 100%; }
+  
+  .floating-stats-mobile {
+     position: relative !important;
+     right: auto !important;
+     top: auto !important;
+     transform: none !important;
+     margin-top: 40px;
+     width: 100%;
+     animation: none !important;
+     display: flex !important;
+     flex-direction: column;
+     gap: 12px;
+  }
+}
+
+.mobile-only { display: none; }
+@media (max-width: 1024px) {
+  .mobile-only { display: flex; }
+  .desktop-only { display: none !important; }
+}
+
+/* Sidebar Toggle Button */
+.menu-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-500);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(16,185,129,0.4);
+  z-index: 1001;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.menu-trigger:active { transform: scale(0.9); }
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -311,23 +311,23 @@ export default function EnhancedAdminWithFunctionality() {
   }
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: "clamp(16px, 4vw, 24px)" }}>
       {/* Quick Stats Banner (Only on Overview) */}
       {activeTab === "overview" && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+        <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", gap: "20px" }}>
           <div>
-            <h1 style={{ fontSize: "32px", fontWeight: 800, color: "var(--text-0)", letterSpacing: "-1px" }}>
+            <h1 className="page-title" style={{ fontSize: "clamp(24px, 5vw, 32px)", fontWeight: 800, color: "var(--text-0)", letterSpacing: "-1px" }}>
               Admin Console
             </h1>
-            <p style={{ color: "var(--text-3)", fontSize: "16px", marginTop: "4px" }}>
+            <p className="page-subtitle" style={{ color: "var(--text-3)", fontSize: "clamp(14px, 4vw, 16px)", marginTop: "4px" }}>
               Comprehensive overview of platform performance and growth
             </p>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button className="btn btn-ghost" style={{ gap: "8px" }} onClick={() => alert("Checking platform status...")}>
+          <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "400px" }} className="flex-mobile-stack">
+            <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Checking platform status...")}>
               <Activity size={16} /> System Health
             </button>
-            <button className="btn btn-primary" style={{ gap: "8px" }} onClick={() => alert("Notification center opened.")}>
+            <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Notification center opened.")}>
               <Bell size={16} /> Notifications
             </button>
           </div>
@@ -335,12 +335,12 @@ export default function EnhancedAdminWithFunctionality() {
       )}
 
       {/* Tab Navigation */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "32px", borderBottom: "1px solid var(--border-default)", paddingBottom: "2px" }}>
+      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid var(--border-subtle)", marginBottom: "32px", overflowX: "auto", paddingBottom: "4px", scrollbarWidth: "none" }} className="hide-scrollbar">
         {[
           { id: "overview", label: "Overview", icon: BarChart3 },
           { id: "users", label: "Users", icon: Users },
-          { id: "draws", label: "Draws", icon: Trophy },
-          { id: "winners", label: "Winners", icon: Award },
+          { id: "winners", label: "Winners", icon: Trophy },
+          { id: "draws", label: "Draws", icon: Zap },
           { id: "charities", label: "Charities", icon: Heart },
           { id: "analytics", label: "Analytics", icon: TrendingUp }
         ].map(tab => (
@@ -353,7 +353,8 @@ export default function EnhancedAdminWithFunctionality() {
               borderBottom: activeTab === tab.id ? "2px solid var(--blue-500)" : "none",
               borderRadius: "0 0 0 0",
               height: "44px",
-              padding: "0 20px"
+              padding: "0 20px",
+              whiteSpace: "nowrap"
             }}
           >
             <tab.icon size={16} />
@@ -364,7 +365,7 @@ export default function EnhancedAdminWithFunctionality() {
 
       {/* Subtab Header Standardizer */}
       {(activeTab !== "overview" && activeTab !== "analytics") && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", gap: "20px" }}>
           <div>
             <h3 style={{ fontSize: "24px", fontWeight: 800, color: "var(--text-0)" }}>
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management
@@ -376,7 +377,7 @@ export default function EnhancedAdminWithFunctionality() {
               {activeTab === 'charities' && "Manage partner charities and their impact goals"}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "10px", width: "100%", maxWidth: "400px" }} className="flex-mobile-stack">
             {activeTab === 'users' && (
               <button
                 className="btn btn-primary"
@@ -489,7 +490,17 @@ export default function EnhancedAdminWithFunctionality() {
           </div>
 
           {/* Recent Activity */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          <div className="grid-responsive-admin" style={{ display: "grid", gap: "24px" }}>
+            <style jsx>{`
+              .grid-responsive-admin {
+                grid-template-columns: 1.2fr 1.8fr;
+              }
+              @media (max-width: 1024px) {
+                .grid-responsive-admin {
+                  grid-template-columns: 1fr;
+                }
+              }
+            `}</style>
             <div className="card">
               <h3 style={{ fontSize: "18px", marginBottom: "20px" }}>Recent Users</h3>
               <div style={{ maxHeight: "300px", overflowY: "auto" }}>
@@ -570,7 +581,17 @@ export default function EnhancedAdminWithFunctionality() {
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.8fr", gap: "24px" }}>
+          <div className="grid-responsive-admin-2" style={{ display: "grid", gap: "24px" }}>
+            <style jsx>{`
+              .grid-responsive-admin-2 {
+                grid-template-columns: 1.2fr 1.8fr;
+              }
+              @media (max-width: 1024px) {
+                .grid-responsive-admin-2 {
+                  grid-template-columns: 1fr;
+                }
+              }
+            `}</style>
             <div className="card">
               <h3 style={{ fontSize: "18px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
                 <Zap size={20} color="var(--gold-400)" /> Execute New Draw
@@ -680,8 +701,8 @@ export default function EnhancedAdminWithFunctionality() {
           </div>
 
           {/* Winner Filters */}
-          <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
               <input
                 className="input"
@@ -712,7 +733,7 @@ export default function EnhancedAdminWithFunctionality() {
 
           {/* Winners Table */}
           <div className="card">
-            <div style={{ overflowX: "auto" }}>
+            <div className="table-responsive">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -914,8 +935,8 @@ export default function EnhancedAdminWithFunctionality() {
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
               <input
                 className="input"
@@ -992,7 +1013,7 @@ export default function EnhancedAdminWithFunctionality() {
                     {charity.description}
                   </p>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                  <div className="grid-2" style={{ gap: "20px", marginBottom: "24px" }}>
 
                     <div>
                       <div style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "4px" }}>Users</div>
@@ -1055,8 +1076,8 @@ export default function EnhancedAdminWithFunctionality() {
           </div>
 
           {/* User Filters */}
-          <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
               <input
                 className="input"
@@ -1085,7 +1106,7 @@ export default function EnhancedAdminWithFunctionality() {
 
           {/* Users Table */}
           <div className="card">
-            <div style={{ overflowX: "auto" }}>
+            <div className="table-responsive">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -1221,20 +1242,20 @@ export default function EnhancedAdminWithFunctionality() {
 
       {activeTab === "analytics" && (
         <div className="animate-fade-up">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", gap: "20px" }}>
             <div>
-              <h1 style={{ fontSize: "28px", fontWeight: 800, color: "var(--text-0)", marginBottom: "8px" }}>
+              <h1 className="page-title" style={{ fontSize: "28px", fontWeight: 800, color: "var(--text-0)", marginBottom: "8px" }}>
                 Platform Analytics
               </h1>
-              <p style={{ color: "var(--text-3)", fontSize: "16px" }}>
+              <p className="page-subtitle" style={{ color: "var(--text-3)", fontSize: "16px" }}>
                 Revenue distributions, user growth and charity impact
               </p>
             </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button className="btn btn-ghost" style={{ gap: "8px" }} onClick={() => alert("Preparing comprehensive PDF report...")}>
+            <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "450px" }} className="flex-mobile-stack">
+              <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Preparing comprehensive PDF report...")}>
                 <Download size={16} /> Export Full PDF
               </button>
-              <button className="btn btn-primary" style={{ gap: "8px" }} onClick={() => alert("Scheduling automatic weekly report...")}>
+              <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Scheduling automatic weekly report...")}>
                 <TrendingUp size={16} /> Schedule Report
               </button>
             </div>
@@ -1461,7 +1482,7 @@ export default function EnhancedAdminWithFunctionality() {
               {editingCharity?.id ? "Edit Charity" : "Add Charity"}
             </h3>
             <form onSubmit={saveCharity}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+              <div className="grid-2" style={{ gap: "16px", marginBottom: "16px" }}>
                 <div>
                   <label className="label">Name *</label>
                   <input
@@ -1496,7 +1517,7 @@ export default function EnhancedAdminWithFunctionality() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+              <div className="grid-2" style={{ gap: "16px", marginBottom: "16px" }}>
                 <div>
                   <label className="label">Logo URL</label>
                   <input
@@ -1570,7 +1591,8 @@ export default function EnhancedAdminWithFunctionality() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "32px" }}>
+            {/* Recent Activity */}
+            <div className="grid-2" style={{ gap: "24px", marginBottom: "32px" }}>
               <div className="card" style={{ padding: "16px", background: "var(--bg-raised)", border: "none" }}>
                 <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", fontWeight: 700 }}>MEMBER SINCE</div>
                 <div style={{ fontSize: "14px" }}>{formatDate(selectedUser.created_at)}</div>
@@ -1620,7 +1642,7 @@ export default function EnhancedAdminWithFunctionality() {
                 setSaving(false);
               }
             }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+              <div className="grid-2" style={{ gap: "20px", marginBottom: "24px" }}>
                 <div>
                   <label className="label">Full Name</label>
                   <input

@@ -98,7 +98,7 @@ export default function LandingPage() {
         </div>
 
         {/* Floating stats card */}
-        <div style={{ position: "absolute", right: "5%", top: "50%", transform: "translateY(-50%)", display: "grid", gap: "16px", animation: "float 6s ease-in-out infinite" }}>
+        <div className="floating-stats-mobile" style={{ position: "absolute", right: "5%", top: "50%", transform: "translateY(-50%)", display: "grid", gap: "16px", animation: "float 6s ease-in-out infinite" }}>
           {[
             { label: "This Month's Prize Pool", val: "$12,400", color: "var(--gold-400)" },
             { label: "Charity Distributed", val: "$284K Total", color: "var(--green-400)" },
@@ -113,20 +113,22 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS STRIP ── */}
-      <section style={{ padding: "60px 5%", display: "flex", gap: "40px", justifyContent: "center", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-base)" }}>
-        {[
-          { label: "Active Members", end: 2400, suffix: "+" },
-          { label: "Prize Pool Paid Out", end: 284, prefix: "$", suffix: "K" },
-          { label: "Charities Supported", end: 12, suffix: "" },
-          { label: "Rounds Logged", end: 189000, suffix: "+" },
-        ].map((s, i) => (
-          <div key={i} style={{ textAlign: "center", padding: "0 40px", borderRight: i < 3 ? "1px solid var(--border-subtle)" : "none" }}>
-            <div style={{ fontSize: "40px", fontWeight: 900, fontFamily: "Outfit", letterSpacing: "-2px", color: "var(--text-0)" }}>
-              <Counter {...s} />
+      <section style={{ padding: "60px 5%", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-base)" }}>
+        <div className="grid-4" style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          {[
+            { label: "Active Members", end: 2400, suffix: "+" },
+            { label: "Prize Pool Paid Out", end: 284, prefix: "$", suffix: "K" },
+            { label: "Charities Supported", end: 12, suffix: "" },
+            { label: "Rounds Logged", end: 189000, suffix: "+" },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: "center", padding: "20px" }}>
+              <div style={{ fontSize: "clamp(24px, 4vw, 40px)", fontWeight: 900, fontFamily: "Outfit", letterSpacing: "-2px", color: "var(--text-0)" }}>
+                <Counter {...s} />
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-3)", fontWeight: 600, marginTop: "4px" }}>{s.label}</div>
             </div>
-            <div style={{ fontSize: "13px", color: "var(--text-3)", fontWeight: 600, marginTop: "4px" }}>{s.label}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
       {/* ── FEATURES ── */}
@@ -152,19 +154,19 @@ export default function LandingPage() {
       </section>
 
       {/* ── CHARITY SPOTLIGHT ── */}
-      <section style={{ padding: "100px 5%", borderTop: "1px solid var(--border-subtle)" }}>
-        <div style={{ background: "linear-gradient(135deg, var(--bg-surface), rgba(244,63,94,0.03))", borderRadius: "32px", padding: "64px", border: "1px solid var(--border-default)", position: "relative", overflow: "hidden" }}>
+      <section style={{ padding: "clamp(40px, 10vw, 100px) 5%", borderTop: "1px solid var(--border-subtle)" }}>
+        <div style={{ background: "linear-gradient(135deg, var(--bg-surface), rgba(244,63,94,0.03))", borderRadius: "32px", padding: "clamp(24px, 5vw, 64px)", border: "1px solid var(--border-default)", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "200px", height: "200px", background: "var(--red-500)", opacity: 0.05, filter: "blur(60px)", borderRadius: "50%" }} />
           
-          <div className="grid-2" style={{ alignItems: "center", gap: "60px" }}>
+          <div className="grid-2" style={{ alignItems: "center" }}>
             <div>
               <div className="badge badge-rose" style={{ marginBottom: "20px" }}>Featured Spotlight</div>
-              <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "24px" }}>Help Save the Oceans with Project Blue</h2>
-              <p style={{ color: "var(--text-1)", fontSize: "18px", lineHeight: 1.8, marginBottom: "32px" }}>
+              <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 3rem)", marginBottom: "24px" }}>Help Save the Oceans with Project Blue</h2>
+              <p style={{ color: "var(--text-1)", fontSize: "clamp(16px, 2vw, 18px)", lineHeight: 1.8, marginBottom: "32px" }}>
                 This month's featured charity is dedicated to cleaning the Pacific coastline. 
                 With every golf round you log, you're helping remove 5lbs of plastic from our waters. 
               </p>
-              <div style={{ display: "flex", gap: "32px", marginBottom: "40px" }}>
+              <div style={{ display: "flex", gap: "32px", marginBottom: "40px", flexWrap: "wrap" }}>
                 <div>
                   <div style={{ fontSize: "28px", fontWeight: 900, color: "var(--text-0)" }}>$42,800</div>
                   <div style={{ fontSize: "12px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Raised this month</div>
@@ -174,9 +176,9 @@ export default function LandingPage() {
                   <div style={{ fontSize: "12px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase" }}>Impact Multiplier</div>
                 </div>
               </div>
-              <Link href="/auth/signup" className="btn btn-primary">Participate via Subscription</Link>
+              <Link href="/auth/signup" className="btn btn-primary" style={{ width: "100%", maxWidth: "300px" }}>Participate via Subscription</Link>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.05)", padding: "12px", borderRadius: "24px", border: "1px solid var(--border-subtle)" }}>
+            <div style={{ background: "rgba(255,255,255,0.05)", padding: "12px", borderRadius: "24px", border: "1px solid var(--border-subtle)", marginTop: "32px" }} className="mobile-only-margin">
               <img src="https://images.unsplash.com/photo-1484291470158-b8f8d608850d?auto=format&fit=crop&w=800&q=80" alt="Ocean" style={{ width: "100%", borderRadius: "16px", display: "block" }} />
             </div>
           </div>

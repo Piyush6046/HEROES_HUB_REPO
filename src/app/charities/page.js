@@ -75,7 +75,7 @@ export default function Charities() {
   );
 
   return (
-    <div style={{marginLeft:"-60px"}}>
+    <div className="charities-container">
           <>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
@@ -111,7 +111,7 @@ export default function Charities() {
               <p style={{ fontSize: "14px", color: "var(--text-3)" }}>Tell Gemini AI what matters to you</p>
             </div>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div className="flex-mobile-stack" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <input
               className="input"
               placeholder='e.g. "I care about children and education access in developing nations"'
@@ -127,7 +127,7 @@ export default function Charities() {
         </div>
 
         {/* Controls */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
+        <div className="flex-mobile-stack" style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
           <select
             className="input"
             value={selectedCategory}
@@ -150,7 +150,7 @@ export default function Charities() {
             <option value="featured">Featured First</option>
             <option value="category">By Category</option>
           </select>
-          <div style={{ display: "flex", gap: "8px", background: "var(--bg-surface)", borderRadius: "8px", padding: "4px" }}>
+          <div className="desktop-only" style={{ display: "flex", gap: "8px", background: "var(--bg-surface)", borderRadius: "8px", padding: "4px" }}>
             <button
               className={`btn btn-sm ${viewMode === "grid" ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setViewMode("grid")}
@@ -166,14 +166,14 @@ export default function Charities() {
               List
             </button>
           </div>
-          <div style={{ position: "relative", flex: 1, maxWidth: "300px" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
             <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
             <input className="input" placeholder="Search charities..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ paddingLeft: "38px", width: "100%" }} />
           </div>
         </div>
 
         {/* Results count */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
           <p style={{ fontSize: "14px", color: "var(--text-3)" }}>
             {sortedCharities.length} partners available
             {selectedCategory !== "all" && ` in ${selectedCategory}`}

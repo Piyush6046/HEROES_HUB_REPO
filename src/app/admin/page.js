@@ -151,7 +151,7 @@ export default function Admin() {
   }
 
   return (
-    <div style={{marginLeft:"-60px"}}> 
+    <div className="admin-container"> 
      <>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
           <ShieldCheck size={24} color="var(--green-500)" />
@@ -160,6 +160,5 @@ export default function Admin() {
       <EnhancedAdminWithFunctionality />
     </>
       </div> 
-   
   );
 }
