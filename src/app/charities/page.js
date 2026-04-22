@@ -175,14 +175,16 @@ export default function Charities() {
             const selected = profile?.charity_id === c.id;
             return (
               <div key={c.id} style={{
-                background: "var(--bg-surface)",
+                background: "rgba(255,255,255,0.02)",
+                backdropFilter: "blur(12px)",
                 border: `${selected ? "2px" : "1px"} solid ${selected ? "var(--green-500)" : "var(--border-default)"}`,
                 borderRadius: "var(--r-xl)", overflow: "hidden",
-                transition: "all 0.35s cubic-bezier(0.16,1,0.3,1)",
+                transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
                 animation: `fadeUp 0.4s ease ${idx * 0.05}s both`,
-                boxShadow: selected ? "0 0 28px rgba(16,185,129,0.18)" : "var(--shadow-card)",
+                boxShadow: selected ? "0 12px 40px rgba(16,185,129,0.2)" : "var(--shadow-card)",
+                perspective: "1000px"
               }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.borderColor = selected ? "var(--green-400)" : "var(--border-strong)"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-8px) rotateX(6deg)"; e.currentTarget.style.borderColor = selected ? "var(--green-400)" : "var(--border-strong)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.borderColor = selected ? "var(--green-500)" : "var(--border-default)"; }}
               >
                 {/* Image */}

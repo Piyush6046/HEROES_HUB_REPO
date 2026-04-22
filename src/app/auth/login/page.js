@@ -33,6 +33,10 @@ export default function LoginPage() {
       setError(authError.message); 
       setLoading(false); 
     } else {
+      // Cache user instantly for the next page load
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("auth_user", JSON.stringify(user));
+      }
       try {
         fetch("/api/auth/onboarding", {
           method: "POST",

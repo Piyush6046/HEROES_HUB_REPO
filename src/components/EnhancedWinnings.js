@@ -1,39 +1,15 @@
-import { useState, useEffect } from "react";
-  import { Trophy, Calendar, TrendingUp, ChevronDown, ChevronUp, Download, Award, ExternalLink, CheckCircle, Clock, X, Upload } from "lucide-react";
+import { useState } from "react";
+import { Trophy, Calendar, TrendingUp, ChevronDown, ChevronUp, Download, Award, ExternalLink, CheckCircle, Clock, X, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
+import { useGlobalData } from "@/context/DataContext";
 
 export default function EnhancedWinnings({ userId }) {
-  const [winnings, setWinnings] = useState([]);
+  const { winners: globalWinners, loading: globalLoading, setWinners } = useGlobalData();
   const [expanded, setExpanded] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchWinnings() {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("winners")
-          .select("*, draws(month_year), profiles(*)")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Error fetching winnings:", error);
-        } else {
-          setWinnings(data || []);
-        }
-      } catch (error) {
-        console.error("Unexpected error fetching winnings:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (userId) {
-      fetchWinnings();
-    }
-  }, [userId]);
+  const winnings = globalWinners.filter(w => w.user_id === userId);
+  const loading = globalLoading && winnings.length === 0;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -295,7 +271,7 @@ export default function EnhancedWinnings({ userId }) {
                                     .from("winners")
                                     .select("*, draws(month_year), profiles(*)")
                                     .order("created_at", { ascending: false });
-                                  setWinnings(w || []);
+                                  setWinners(w || []);
                                 }
                               } catch (error) {
                                 toast.error('Error uploading proof: ' + error.message);

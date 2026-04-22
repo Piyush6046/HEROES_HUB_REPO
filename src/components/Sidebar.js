@@ -9,6 +9,20 @@ import {
   Target, ChevronRight, Globe, Plus, Zap
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useGlobalData } from "@/context/DataContext";
+
+const RANK_THRESHOLDS = [
+  { min: 0, label: "Beginner", color: "#94a3b8" },
+  { min: 100, label: "Amateur", color: "#10b981" },
+  { min: 300, label: "Semi-Pro", color: "#3b82f6" },
+  { min: 600, label: "Professional", color: "#8b5cf6" },
+  { min: 1000, label: "Master", color: "#f59e0b" },
+  { min: 2000, label: "Legend", color: "#f43f5e" }
+];
+
+const getRank = (xp) => {
+  return [...RANK_THRESHOLDS].reverse().find(r => xp >= r.min) || RANK_THRESHOLDS[0];
+};
 
 const NAV = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "#10b981" },
@@ -20,9 +34,12 @@ const NAV = [
 export default function Sidebar({ isOpen }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user, role, loading } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
+  const { scores, profile, loading: dataLoading } = useGlobalData();
   const [hovered, setHovered] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const loading = authLoading || dataLoading;
 
   if (pathname === "/" || pathname.startsWith("/auth")) return null;
 
@@ -42,6 +59,12 @@ export default function Sidebar({ isOpen }) {
   const initials = user?.email?.slice(0, 2).toUpperCase() || "GH";
   const username = user?.email?.split("@")[0] || "Player";
 
+  // XP Logic
+  const xp = (scores?.length || 0) * 50 + (profile?.charity_id ? 100 : 0);
+  const rank = getRank(xp);
+  const nextRank = RANK_THRESHOLDS[RANK_THRESHOLDS.indexOf(rank) + 1];
+  const xpProgress = nextRank ? ((xp - rank.min) / (nextRank.min - rank.min)) * 100 : 100;
+
   return (
     <aside className={`sidebar ${isOpen ? "open" : ""}`} style={{ overflowX: "hidden" }}>
       {/* Brand */}
@@ -52,15 +75,18 @@ export default function Sidebar({ isOpen }) {
 
       {/* XP mini bar if user is logged in */}
       {user && !loading && (
-        <div style={{ margin: "0 8px 20px", padding: "10px 14px", background: "var(--bg-raised)", borderRadius: "10px", border: "1px solid var(--border-subtle)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+        <div style={{ margin: "0 8px 20px", padding: "12px 14px", background: "var(--bg-raised)", borderRadius: "12px", border: `1px solid ${rank.color}33`, boxShadow: `0 4px 12px ${rank.color}0a` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--text-3)", display: "flex", alignItems: "center", gap: "4px" }}>
-              <Zap size={10} color="var(--gold-400)" /> XP Progress
+              <Zap size={10} color={rank.color} /> Rank Progress
             </span>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--gold-400)", fontFamily: "Outfit" }}>Lv 1</span>
+            <span style={{ fontSize: "11px", fontWeight: 800, color: rank.color, fontFamily: "Outfit" }}>{rank.label}</span>
           </div>
-          <div style={{ height: "4px", background: "var(--bg-overlay)", borderRadius: "99px", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: "35%", background: "linear-gradient(90deg, var(--gold-400), var(--gold-500))", borderRadius: "99px", boxShadow: "0 0 6px rgba(251,191,36,0.5)" }} />
+          <div style={{ height: "6px", background: "var(--bg-overlay)", borderRadius: "99px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${xpProgress}%`, background: `linear-gradient(90deg, ${rank.color}, ${rank.color}cc)`, borderRadius: "99px", transition: "width 1s ease-in-out" }} />
+          </div>
+          <div style={{ marginTop: "6px", fontSize: "9px", color: "var(--text-3)", textAlign: "right" }}>
+            {nextRank ? `${nextRank.min - xp} XP to ${nextRank.label}` : "Max Rank Achieved"}
           </div>
         </div>
       )}

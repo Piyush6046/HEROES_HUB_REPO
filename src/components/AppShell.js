@@ -15,6 +15,30 @@ export default function AppShell({ children }) {
     setIsSidebarOpen(false);
   }, [pathname]);
 
+  // Scroll Reveal Observer — handles both initial elements AND ones added after async data loads
+  useEffect(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("revealed");
+          io.unobserve(entry.target); // stop watching once revealed
+        }
+      });
+    }, { threshold: 0, rootMargin: "0px 0px -20px 0px" });
+
+    // Observe any .reveal elements already in the DOM
+    function observeAll() {
+      document.querySelectorAll(".reveal:not(.revealed)").forEach(el => io.observe(el));
+    }
+    observeAll();
+
+    // Watch for new .reveal elements added dynamically (after data loads)
+    const mo = new MutationObserver(() => observeAll());
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => { io.disconnect(); mo.disconnect(); };
+  }, [pathname]);
+
   return (
     <div className="app-shell">
       {!isPublic && (

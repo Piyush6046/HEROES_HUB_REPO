@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import EnhancedWinnings from "@/components/EnhancedWinnings";
-import { Target, Trophy, Calendar, Heart, Plus, Sparkles, Award, TrendingUp, Activity, Edit3 } from "lucide-react";
+import { Target, Trophy, Calendar, Heart, Plus, Sparkles, Award, TrendingUp, Activity, Edit3, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 const RANK_THRESHOLDS = [
@@ -52,8 +52,8 @@ function StatCard({ label, val, unit, icon: Icon, iconColor, iconBg, change, del
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { scores, profile, loading, refreshData } = useGlobalData();
+  const { user, loading: authLoading } = useAuth();
+  const { scores, profile, loading: dataLoading, refreshData, setScores } = useGlobalData();
   const [newScore, setNewScore]     = useState("");
   const [insight, setInsight]       = useState("");
   const [insightLoading, setInsightLoading] = useState(false);
@@ -62,8 +62,15 @@ export default function Dashboard() {
   const [posting, setPosting]       = useState(false);
   const [aiAdvice, setAiAdvice]     = useState({ advice: "Analysing your swing…", luckyNumbers: [] });
   const [pageVisible, setPageVisible] = useState(false);
+  const [trendLimit, setTrendLimit] = useState(10); // Default to last 10 rounds
 
   useEffect(() => { const t = setTimeout(() => setPageVisible(true), 60); return () => clearTimeout(t); }, []);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, authLoading, router]);
 
   const fetchAIAdvice = async (userScores, currentRank) => {
     try {
@@ -98,23 +105,58 @@ export default function Dashboard() {
 
   const logRound = async (e) => {
     e.preventDefault();
+    if (!user) return toast.error("You must be logged in to save a score.");
+    
     const val = parseInt(newScore);
     if (!val || val < 1 || val > 45) return toast.error("Enter a valid score (1–45 pts).");
-    setPosting(true);
-    try {
-      const { data: currentScores } = await supabase.from("scores").select("id, date_played").eq("user_id", user.id).order("date_played", { ascending: true });
-      if (currentScores?.length >= 5) {
-        await supabase.from("scores").delete().eq("id", currentScores[0].id);
+    
+    // 2. Close modal and reset state instantly
+    const entryVal = val;
+    setNewScore(""); 
+    setShowScoreModal(false);
+    toast.success("Round logged! Syncing...");
+    
+    const tempId = Math.random().toString();
+    const now = new Date().toISOString();
+    const newEntry = { 
+      id: tempId, 
+      user_id: user.id, 
+      score: entryVal, 
+      date_played: now.split("T")[0], 
+      created_at: now 
+    };
+    
+    // 1. Optimistic Update (Immediate UI response)
+    const oldScores = [...scores];
+    setScores([newEntry, ...scores]);
+    
+    // 3. Background Sync
+
+    // 3. Background Sync (Happens in background, doesn't block UI)
+    (async () => {
+      try {
+        const { error: insError } = await supabase.from("scores").insert({ 
+          user_id: user.id, 
+          score: val, 
+          date_played: new Date().toISOString().split("T")[0]
+          // created_at is handled by default by DB
+        });
+        
+        if (insError) throw insError;
+        
+        console.log("DB Update Successful for score:", val);
+        
+        // Final refresh to ensure everything is perfectly in sync
+        await refreshData(true);
+      } catch (error) { 
+        console.error("Background sync failed critically:", error); 
+        setScores(oldScores); // Rollback to previous known good state
+        toast.error("Database sync failed. Your score was not saved."); 
       }
-      await supabase.from("scores").insert({ user_id: user.id, score: val, date_played: new Date().toISOString().split("T")[0] });
-      setNewScore(""); setShowScoreModal(false);
-      await refreshData();
-      toast.success("Round logged successfully!");
-    } catch (error) { console.error(error); toast.error("An unexpected error occurred."); }
-    finally { setPosting(false); }
+    })();
   };
 
-  if (loading) return (
+  if (authLoading || (dataLoading && !profile)) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg-void)", flexDirection: "column", gap: "20px" }}>
       <div style={{ width: "48px", height: "48px", border: "3px solid var(--border-default)", borderTopColor: "var(--green-500)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       <div style={{ color: "var(--text-3)", fontSize: "14px", fontWeight: 600, letterSpacing: "0.5px" }}>Loading dashboard…</div>
@@ -156,11 +198,25 @@ export default function Dashboard() {
       <div className="card mb-6" style={{
         background: `linear-gradient(135deg, ${rank.color}18, var(--bg-surface))`,
         borderColor: rank.color + "44",
-        boxShadow: `0 0 40px ${rank.color}10`,
+        boxShadow: `0 12px 48px ${rank.color}15`,
         position: "relative",
-        overflow: "hidden"
+        overflow: "hidden",
+        padding: "32px",
+        borderRadius: "28px"
       }}>
-        <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "30%", opacity: 0.1, backgroundImage: "url('https://images.unsplash.com/photo-1593118247619-e2d6f056869e?auto=format&fit=crop&w=400&q=80')", backgroundSize: "cover", backgroundPosition: "center", maskImage: "linear-gradient(to left, black, transparent)", WebkitMaskImage: "linear-gradient(to left, black, transparent)" }} />
+        <div style={{ 
+          position: "absolute", 
+          top: 0, 
+          right: 0, 
+          bottom: 0, 
+          width: "50%", 
+          opacity: 0.25, 
+          backgroundImage: "url('/premium_golf_dashboard_header_1776881727594.png')", 
+          backgroundSize: "cover", 
+          backgroundPosition: "center", 
+          maskImage: "linear-gradient(to left, black 20%, transparent)", 
+          WebkitMaskImage: "linear-gradient(to left, black 20%, transparent)" 
+        }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px", position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: rank.color + "22", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 16px ${rank.color}44` }}>
@@ -203,25 +259,39 @@ export default function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid-4 mb-6">
+      <div className="grid-4 mb-6 stagger-children">
         <StatCard label="Average Score"  val={avg || "–"} unit="pts"    icon={Target}   iconColor="#10b981" iconBg="rgba(16,185,129,0.1)"  change={trend} delay={0} />
-        <StatCard label="Best Round"     val={best || "–"} unit="pts"   icon={Trophy}   iconColor="#fbbf24" iconBg="rgba(251,191,36,0.1)"  delay={80} />
-        <StatCard label="Rounds Logged"  val={scores.length}            icon={Calendar} iconColor="#6366f1" iconBg="rgba(99,102,241,0.1)"  delay={160} />
-        <StatCard label="Charity Impact" val={`$${(scores.length * 3.5).toFixed(0)}`} icon={Heart} iconColor="#f43f5e" iconBg="rgba(244,63,94,0.1)" delay={240} />
+        <StatCard label="Best Round"     val={best || "–"} unit="pts"   icon={Trophy}   iconColor="#fbbf24" iconBg="rgba(251,191,36,0.1)"  delay={100} />
+        <StatCard label="Rounds Logged"  val={scores.length}            icon={Calendar} iconColor="#6366f1" iconBg="rgba(99,102,241,0.1)"  delay={200} />
+        <StatCard label="Charity Impact" val={`$${(scores.length * 3.5).toFixed(0)}`} icon={Heart} iconColor="#f43f5e" iconBg="rgba(244,63,94,0.1)" delay={300} />
       </div>
 
       {/* Main Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px", marginBottom: "32px", alignItems: "start" }}>
+      <div className="dashboard-main-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px", marginBottom: "32px", alignItems: "start" }}>
         <style>{`@media (max-width:1024px){.dashboard-main-grid{grid-template-columns:1fr!important}}`}</style>
         {/* Left Column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Performance chart */}
-          <div className="card">
+          <div className="card reveal">
             <div className="card-header">
               <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <TrendingUp size={18} color="var(--green-500)" /> Performance Trend
               </h3>
-              <span className="badge badge-green">Last {scores.length} rounds</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <select 
+                  className="input btn-sm" 
+                  value={trendLimit} 
+                  onChange={e => setTrendLimit(e.target.value === "all" ? scores.length : parseInt(e.target.value))}
+                  style={{ height: "26px", fontSize: "11px", padding: "0 8px", width: "80px", background: "var(--bg-raised)" }}
+                >
+                  <option value="5">Last 5</option>
+                  <option value="7">Last 7</option>
+                  <option value="10">Last 10</option>
+                  <option value="15">Last 15</option>
+                  <option value="all">All</option>
+                </select>
+                <span className="badge badge-green">Showing {Math.min(scores.length, trendLimit)} rounds</span>
+              </div>
             </div>
             {scores.length === 0 ? (
               <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px", color: "var(--text-3)" }}>
@@ -230,7 +300,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "180px", padding: "20px 0 0" }}>
-                {[...scores].reverse().map((s, i) => {
+                {[...scores].slice(0, trendLimit).reverse().map((s, i) => {
                   const pct = (s.score / 45) * 100;
                   return (
                     <div key={s.id} className="bar-col" style={{ flex: 1 }}
@@ -249,44 +319,77 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Recent activity */}
-          <div className="card">
-            <div className="card-header">
+          {/* Round History Logbook */}
+          <div className="card reveal" style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            height: "500px", 
+            padding: 0,
+            overflow: "hidden",
+            background: "var(--bg-surface)"
+          }}>
+            <div className="card-header" style={{ padding: "20px 24px 16px", marginBottom: 0, borderBottom: "1px solid var(--border-subtle)" }}>
               <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Activity size={18} color="var(--green-500)" /> Recent Activity
+                <Activity size={18} color="var(--green-500)" /> Round History Logbook
               </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => router.push("/draws")}>View Draw History</button>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="badge badge-indigo">{scores.length} Rounds</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => router.push("/draws")}>Statistics</button>
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            
+            <div className="hide-scrollbar" style={{ 
+              flex: 1, 
+              overflowY: "auto", 
+              padding: "16px 20px", 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "10px"
+            }}>
               {scores.length === 0 ? (
-                <div style={{ padding: "40px", textAlign: "center", color: "var(--text-3)", fontSize: "14px" }}>
+                <div style={{ padding: "80px 40px", textAlign: "center", color: "var(--text-3)", fontSize: "14px" }}>
+                  <div style={{ marginBottom: "12px", opacity: 0.2 }}><Target size={48} style={{ margin: "0 auto" }} /></div>
                   Your golf round history will appear here.
                 </div>
               ) : (
                 scores.map((score, index) => (
-                  <div key={score.id} style={{
+                  <div key={score.id} className="history-item" style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "14px 16px", background: "var(--bg-raised)", borderRadius: "12px",
+                    padding: "13px 16px", background: "var(--bg-raised)", borderRadius: "14px",
                     border: "1px solid var(--border-subtle)", transition: "all 0.25s ease",
-                    animation: `fadeUp 0.4s ease ${index * 0.06}s both`,
+                    animation: `fadeUp 0.45s ease ${index * 0.04}s both`,
+                    cursor: "pointer",
+                    position: "relative",
+                    overflow: "hidden"
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.background = "var(--bg-overlay)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.background = "var(--bg-raised)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-elevated, var(--bg-panel))"; e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.transform = "translateX(3px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-raised)"; e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.transform = ""; }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                      <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "var(--green-400)", fontFamily: "Outfit", fontSize: "16px", border: "1px solid rgba(16,185,129,0.2)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <div style={{ 
+                        width: "42px", height: "42px", borderRadius: "12px", 
+                        background: "linear-gradient(135deg, var(--green-500), #059669)", 
+                        display: "flex", alignItems: "center", justifyContent: "center", 
+                        fontWeight: 900, color: "white", fontFamily: "Outfit", fontSize: "17px", 
+                        flexShrink: 0,
+                        boxShadow: "0 4px 12px rgba(16,185,129,0.25)" 
+                      }}>
                         {score.score}
                       </div>
                       <div>
-                        <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-0)" }}>{score.course_name || "Club House Round"}</div>
-                        <div style={{ fontSize: "12px", color: "var(--text-3)", marginTop: "2px" }}>Stableford · Verified via App</div>
+                        <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-0)" }}>{score.course_name || "Official Round"}</div>
+                        <div style={{ fontSize: "12px", color: "var(--text-3)", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <ShieldCheck size={12} color="var(--blue-400)" /> Verified Stableford
+                        </div>
                       </div>
                     </div>
+                    
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-2)" }}>
-                          {new Date(score.date_played).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          {new Date(score.date_played).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </div>
+                        <div style={{ fontSize: "10px", color: "var(--text-3)" }}>{new Date(score.date_played).getFullYear()}</div>
                       </div>
                       <button
                         onClick={() => {
@@ -294,15 +397,18 @@ export default function Dashboard() {
                           setNewScore(String(score.score));
                         }}
                         className="btn btn-icon btn-sm"
-                        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", width: "32px", height: "32px" }}
-                        title="Edit score"
+                        style={{ width: "36px", height: "36px", borderRadius: "12px" }}
                       >
-                        <Edit3 size={13} color="var(--text-3)" />
+                        <Edit3 size={14} />
                       </button>
                     </div>
                   </div>
                 ))
               )}
+            </div>
+            
+            <div style={{ padding: "12px", textAlign: "center", borderTop: "1px solid var(--border-subtle)" }}>
+              <span style={{ fontSize: "11px", color: "var(--text-3)", fontWeight: 600, letterSpacing: "0.3px" }}>Scroll to see older rounds</span>
             </div>
           </div>
         </div>
@@ -310,7 +416,7 @@ export default function Dashboard() {
         {/* Right Column */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* AI Caddy */}
-          <div className="card" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08), var(--bg-surface))", borderColor: "rgba(99,102,241,0.25)", boxShadow: "0 0 30px rgba(99,102,241,0.08)" }}>
+          <div className="card reveal" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08), var(--bg-surface))", borderColor: "rgba(99,102,241,0.25)", boxShadow: "0 0 30px rgba(99,102,241,0.08)" }}>
             <div className="card-header">
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -350,7 +456,7 @@ export default function Dashboard() {
           </div>
 
           {/* Winnings */}
-          <div className="card">
+          <div className="card reveal">
             <div className="card-header">
               <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <Trophy size={16} color="var(--gold-400)" /> Active Winnings
@@ -417,6 +523,13 @@ export default function Dashboard() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes barGrow { from { height: 0; opacity: 0; } to { opacity: 1; } }
+        .history-item:hover {
+          transform: scale(1.02) rotateX(2deg);
+          border-color: var(--green-500) !important;
+          background: var(--bg-overlay) !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          z-index: 10;
+        }
       `}</style>
     </div>
   );

@@ -1,7 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { ArrowRight, Trophy, Heart, Zap, Star, ChevronRight, Shield, Globe, Users, Target } from "lucide-react";
+
+const GolfScene3D = dynamic(() => import("@/components/GolfScene3D"), { ssr: false });
 
 /* ── Animated counter ── */
 function Counter({ end, prefix = "", suffix = "" }) {
@@ -50,6 +53,19 @@ function Reveal({ children, delay = 0, style = {} }) {
 
 export default function LandingPage() {
   const [hovered, setHovered] = useState(null);
+  const [scrollY, setScrollY] = useState(0);
+  const scrollProgress = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrollY(y);
+      scrollProgress.current = Math.min(y / 2800, 1);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const features = [
     {
@@ -94,6 +110,27 @@ export default function LandingPage() {
 
   return (
     <div style={{ background: "var(--bg-void)", minHeight: "100vh" }}>
+
+      {/* ════ GOLF CLUB ANIMATION ════ */}
+      <GolfScene3D scrollProgress={scrollProgress} />
+
+      {/* SCROLL TO SWING prompt */}
+      {scrollY < 60 && (
+        <div style={{
+          position: "fixed", bottom: "6%", left: "50%", transform: "translateX(-50%)",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+          pointerEvents: "none", zIndex: 10000, animation: "fadeUp 1s ease-in-out infinite alternate"
+        }}>
+          <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "3px",
+            textTransform: "uppercase", color: "rgba(16,185,129,0.9)", fontFamily: "Outfit, sans-serif" }}>
+            SCROLL TO SPIN
+          </span>
+          <div style={{ width: "2px", height: "36px",
+            background: "linear-gradient(to bottom, rgba(16,185,129,0.8), transparent)" }} />
+        </div>
+      )}
+      {/* ════ END GOLF ANIMATION ════ */}
+
 
       {/* ── HERO ── */}
       <section className="hero-section" style={{ paddingTop: "140px", paddingBottom: "80px" }}>

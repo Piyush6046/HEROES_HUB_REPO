@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useGlobalData } from "@/context/DataContext";
+import { generateRandomDraw, generateAlgorithmicDraw } from "@/lib/drawEngine";
 
 export default function EnhancedAdminWithFunctionality() {
   const { 
@@ -151,7 +152,11 @@ export default function EnhancedAdminWithFunctionality() {
       await refreshData();
     } catch (err) {
       console.error("Publish Failed:", err);
-      toast.error("Error: " + err.message);
+      // Clean up business rule error messages for a better UI experience
+      const msg = err.message.includes("financial loss") 
+        ? err.message 
+        : "Error: " + err.message;
+      toast.error(msg);
     }
 
     setPublishing(false);

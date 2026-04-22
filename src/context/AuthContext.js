@@ -1,56 +1,76 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-const AuthContext = createContext({});
+const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    async function checkUser() {
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        let newRole = null;
-        if (currentUser) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", currentUser.id)
-            .single();
-          newRole = profile?.role || "user";
-        }
-        setUser(currentUser);
-        setRole(newRole);
-      } catch (err) {
-        console.error("Auth context error:", err);
-      } finally {
+    let mounted = true;
+
+    async function syncSession(session) {
+      if (!mounted) return;
+      const currentUser = session?.user ?? null;
+
+      if (!currentUser) {
+        setUser(null);
+        setRole(null);
         setLoading(false);
+        return;
+      }
+
+      // Optimization: Only update state if user ID changed or this is the first initialization
+      // This prevents redundant re-renders on tab focus / token refresh
+      setUser(prev => {
+        if (prev?.id === currentUser.id) return prev;
+        return currentUser;
+      });
+
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+        
+        if (mounted) {
+          const newRole = profile?.role || "user";
+          setRole(prev => (prev === newRole ? prev : newRole));
+        }
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+      } finally {
+        if (mounted) setLoading(false);
       }
     }
 
-    checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user ?? null;
-        let newRole = null;
-
-        if (currentUser) {
-          const { data: p } = await supabase.from("profiles").select("role").eq("id", currentUser.id).single();
-          newRole = p?.role || "user";
-        }
-
-        // Batch updates to minimize re-renders
-        setUser(prev => (prev?.id === currentUser?.id ? prev : currentUser));
-        setRole(prev => (prev === newRole ? prev : newRole));
-        setLoading(false);
+    // Initial check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        syncSession(session);
+        initialized.current = true;
       }
-    );
+    });
+
+    // Listen for changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
+      // If it's just a token refresh and we already have a user, don't trigger a hard reload
+      if (event === 'TOKEN_REFRESHED' && initialized.current) {
+        return; 
+      }
+
+      syncSession(session);
+    });
 
     return () => {
+      mounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -60,6 +80,6 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => useContext(AuthContext);

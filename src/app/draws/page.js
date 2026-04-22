@@ -17,7 +17,7 @@ function DrawBall({ num, delay = 0, size = "md", active = false }) {
   const dim = sizes[size] || sizes.md;
 
   return (
-    <div style={{
+    <div className="draw-ball-3d" style={{
       width: dim.w, height: dim.h, fontSize: dim.font,
       display: "flex", alignItems: "center", justifyContent: "center",
       borderRadius: "50%", fontWeight: 900, fontFamily: "'Outfit', sans-serif",
@@ -25,18 +25,21 @@ function DrawBall({ num, delay = 0, size = "md", active = false }) {
         ? "linear-gradient(135deg, var(--gold-400), var(--gold-500))"
         : "linear-gradient(135deg, var(--green-500), var(--green-600))",
       color: "white",
-      boxShadow: active ? "0 0 28px rgba(251,191,36,0.55)" : "0 0 20px rgba(16,185,129,0.35)",
-      border: "2px solid rgba(255,255,255,0.18)",
+      boxShadow: active 
+        ? `0 15px 30px ${active ? "rgba(251,191,36,0.4)" : "rgba(16,185,129,0.3)"}` 
+        : "0 8px 20px rgba(0,0,0,0.3)",
+      border: "2px solid rgba(255,255,255,0.2)",
       position: "relative", overflow: "hidden",
-      animation: `ballPop 0.45s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
-      transition: "all 0.3s ease",
+      animation: `ballPop 0.6s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
+      transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
       flexShrink: 0,
+      cursor: "pointer"
     }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15) rotate(5deg)"; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.2) translateY(-10px) rotate(10deg)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
     >
       <div style={{ position: "relative", zIndex: 2 }}>{num}</div>
-      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", background: "rgba(255,255,255,0.12)", borderRadius: "50% 50% 0 0" }} />
+      <div style={{ position: "absolute", top: "10%", left: "10%", width: "25%", height: "25%", background: "rgba(255,255,255,0.4)", borderRadius: "50%", filter: "blur(2px)" }} />
     </div>
   );
 }
