@@ -22,12 +22,20 @@ export default function Sidebar({ isOpen }) {
   const router   = useRouter();
   const { user, role, loading } = useAuth();
   const [hovered, setHovered] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   if (pathname === "/" || pathname.startsWith("/auth")) return null;
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.replace("/auth/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      setIsLoggingOut(false);
+    }
   };
 
   const filteredNav = NAV.filter(item => item.adminOnly ? role?.toLowerCase() === "admin" : true);
@@ -137,11 +145,18 @@ export default function Sidebar({ isOpen }) {
           </div>
         )}
 
-        <button onClick={logout} className="btn btn-ghost" style={{ width: "100%", marginTop: "8px", borderRadius: "10px", justifyContent: "flex-start", gap: "10px", fontSize: "13px", color: "var(--text-2)" }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--rose-500)"; e.currentTarget.style.background = "rgba(244,63,94,0.06)"; }}
+        <button 
+          onClick={logout} 
+          disabled={isLoggingOut || !user}
+          className="btn btn-ghost" 
+          style={{ width: "100%", marginTop: "8px", borderRadius: "10px", justifyContent: "flex-start", gap: "10px", fontSize: "13px", color: "var(--text-2)", opacity: isLoggingOut ? 0.6 : 1 }}
+          onMouseEnter={e => { if(!isLoggingOut) { e.currentTarget.style.color = "var(--rose-500)"; e.currentTarget.style.background = "rgba(244,63,94,0.06)"; } }}
           onMouseLeave={e => { e.currentTarget.style.color = ""; e.currentTarget.style.background = ""; }}
         >
-          <LogOut size={15} /> Sign Out
+          {isLoggingOut ? (
+            <div style={{ width: "15px", height: "15px", border: "2px solid var(--border-default)", borderTopColor: "var(--rose-500)", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          ) : <LogOut size={15} />} 
+          {isLoggingOut ? "Signing out..." : "Sign Out"}
         </button>
       </div>
 

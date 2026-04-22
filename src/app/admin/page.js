@@ -11,14 +11,17 @@ import {
 } from "lucide-react";
 
 import { useGlobalData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
 export default function Admin() {
+  const { user, role, loading: authLoading } = useAuth();
   const { 
     draws, winners, charities, scores, users, 
     loading: dataLoading, refreshData,
     setUsers, setScores, setDraws, setWinners, setCharities
   } = useGlobalData();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("draws");
   const [localWinners, setLocalWinners] = useState([]);
   const [publishing, setPublishing] = useState(false);
@@ -26,31 +29,16 @@ export default function Admin() {
   const [drawType, setDrawType] = useState("standard");
   const [saving, setSaving] = useState(false);
   const [showCharityModal, setShowCharityModal] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/login"); return; }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!profile || profile.role?.toLowerCase() !== "admin") {
+    if (!authLoading) {
+      if (!user) {
+        router.push("/auth/login");
+      } else if (role?.toLowerCase() !== "admin") {
         router.push("/dashboard");
-        return;
       }
-
-      setIsAdmin(true);
-      setLoading(false);
     }
-    checkAuth();
-  }, [router]);
+  }, [user, role, authLoading, router]);
 
   useEffect(() => {
     if (winners) setLocalWinners(winners);
@@ -156,9 +144,13 @@ export default function Admin() {
   const totalPool = (monthlyUsers * 9.99) + (yearlyUsers * (89/12)); // Convert yearly to monthly equivalent
   const charityPool = totalPool * 0.15;
 
-  if (loading) {
+  if (authLoading || dataLoading) {
     return (
-      <div className="flex-center" style={{ height: "calc(100vh - 80px)", color: "var(--text-3)", fontSize: "14px" }}>Loading admin console...</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: "20px" }}>
+        <div style={{ width: "48px", height: "48px", border: "3px solid var(--border-default)", borderTopColor: "var(--green-500)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ color: "var(--text-3)", fontSize: "14px", fontWeight: 600 }}>Securing admin console…</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
+      </div>
     );
   }
 

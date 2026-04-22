@@ -8,16 +8,16 @@ import {
   ShieldCheck, Shuffle, Cpu, ExternalLink, Edit3
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { generateRandomDraw, generateAlgorithmicDraw } from "@/lib/drawEngine";
+import { useGlobalData } from "@/context/DataContext";
 
 export default function EnhancedAdminWithFunctionality() {
+  const { 
+    draws, winners, charities, scores, users, 
+    loading: dataLoading, refreshData,
+    setUsers, setScores, setDraws, setWinners, setCharities
+  } = useGlobalData();
+
   const [activeTab, setActiveTab] = useState("overview");
-  const [users, setUsers] = useState([]);
-  const [scores, setScores] = useState([]);
-  const [draws, setDraws] = useState([]);
-  const [winners, setWinners] = useState([]);
-  const [charities, setCharities] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [simulatedDraw, setSimulatedDraw] = useState(null);
   const [drawType, setDrawType] = useState("standard");
@@ -28,6 +28,7 @@ export default function EnhancedAdminWithFunctionality() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
+  const loading = dataLoading;
 
   // Filters State
   const [userStatusFilter, setUserStatusFilter] = useState("all");
@@ -43,30 +44,6 @@ export default function EnhancedAdminWithFunctionality() {
   const [charitySortBy, setCharitySortBy] = useState("name");
   const [searchWinner, setSearchWinner] = useState("");
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const [{ data: u }, { data: s }, { data: d }, { data: w }, { data: c }] = await Promise.all([
-          supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-          supabase.from("scores").select("score, user_id").order("date_played", { ascending: false }),
-          supabase.from("draws").select("*").order("month_year", { ascending: false }),
-          supabase.from("winners").select("*, draws(month_year), profiles(*)").order("created_at", { ascending: false }),
-          supabase.from("charities").select("*").order("name", { ascending: true })
-        ]);
-        setUsers(u || []);
-        setScores(s || []);
-        setDraws(d || []);
-        setWinners(w || []);
-        setCharities(c || []);
-      } catch (error) {
-        console.error("Error fetching admin data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
 
   // Calculate metrics
   const activeUsers = users.filter(u => u.subscription_status === 'active');
@@ -169,25 +146,12 @@ export default function EnhancedAdminWithFunctionality() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      toast("Published! Detected " + data.winners + " winners.");
+      toast.success("Published! Detected " + data.winners + " winners.");
       setSimulatedDraw(null);
-      // Refresh data
-      const [{ data: u }, { data: s }, { data: d }, { data: w }, { data: c }] = await Promise.all([
-        supabase.from("profiles").select("*"),
-        supabase.from("scores").select("score, user_id"),
-        supabase.from("draws").select("*").order("month_year", { ascending: false }),
-        supabase.from("winners").select("*, draws(month_year), profiles(*)").order("payout_status", { ascending: false }),
-        supabase.from("charities").select("*"),
-      ]);
-      setUsers(u || []);
-      setScores(s || []);
-      setDraws(d || []);
-      setWinners(w || []);
-      setCharities(c || []);
-      setLoading(false);
+      await refreshData();
     } catch (err) {
       console.error("Publish Failed:", err);
-      toast("Error: " + err.message);
+      toast.error("Error: " + err.message);
     }
 
     setPublishing(false);
@@ -202,17 +166,10 @@ export default function EnhancedAdminWithFunctionality() {
       });
       const data = await res.json();
       if (data.error) {
-        toast("Error: " + data.error);
+        toast.error("Error: " + data.error);
       } else {
-        // Optimistic UI update for instant feedback
-        setWinners(prev => prev.map(w => w.id === winId ? { ...w, payout_status: status } : w));
-
-        // Background sync to ensure data integrity
-        const { data: w } = await supabase
-          .from("winners")
-          .select("*, draws(month_year), profiles(*)")
-          .order("created_at", { ascending: false });
-        if (w) setWinners(w);
+        toast.success(data.message || "Payout status updated!");
+        await refreshData();
       }
     } catch (error) {
       toast("Error: " + error.message);
