@@ -12,16 +12,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     async function checkUser() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUser(user);
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        let newRole = null;
+        if (currentUser) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("role")
-            .eq("id", user.id)
+            .eq("id", currentUser.id)
             .single();
-          if (profile) setRole(profile.role);
+          newRole = profile?.role || "user";
         }
+        setUser(currentUser);
+        setRole(newRole);
       } catch (err) {
         console.error("Auth context error:", err);
       } finally {
@@ -33,14 +35,17 @@ export const AuthProvider = ({ children }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          const { data: p } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
-          setRole(p?.role || "user");
-        } else {
-          setUser(null);
-          setRole(null);
+        const currentUser = session?.user ?? null;
+        let newRole = null;
+
+        if (currentUser) {
+          const { data: p } = await supabase.from("profiles").select("role").eq("id", currentUser.id).single();
+          newRole = p?.role || "user";
         }
+
+        // Batch updates to minimize re-renders
+        setUser(prev => (prev?.id === currentUser?.id ? prev : currentUser));
+        setRole(prev => (prev === newRole ? prev : newRole));
         setLoading(false);
       }
     );

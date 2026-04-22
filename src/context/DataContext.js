@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
 
@@ -34,7 +34,9 @@ export function DataProvider({ children }) {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
-    setLoading(true);
+    // Only show loading spinner on initial load to avoid UI flickers on tab focus/refresh
+    const isInitialLoad = !data.profile;
+    if (isInitialLoad) setLoading(true);
     
     try {
       const queryList = [
@@ -93,17 +95,19 @@ export function DataProvider({ children }) {
     }
   }, [user, role]);
 
+  const contextValue = useMemo(() => ({
+    ...data, 
+    loading, 
+    refreshData,
+    setScores,
+    setWinners,
+    setDraws,
+    setCharities,
+    setUsers
+  }), [data, loading, refreshData]);
+
   return (
-    <DataContext.Provider value={{ 
-      ...data, 
-      loading, 
-      refreshData,
-      setScores,
-      setWinners,
-      setDraws,
-      setCharities,
-      setUsers
-    }}>
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );
