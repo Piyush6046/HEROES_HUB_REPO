@@ -1,7 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || "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"
+});
 
 export async function POST(req) {
   try {
@@ -11,17 +13,18 @@ export async function POST(req) {
       return NextResponse.json({ insight: "Need scores to analyze. Start logging rounds to unlock AI coaching!" });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
     const prompt = `
       Performance Intel: The player has these golf scores: ${scores.join(", ")}.
       Give a very short, high-energy tactical tip and a 'Lucky Number' for the next draw.
       Keep it professional yet engaging (Max 150 characters).
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.1-8b-instant",
+    });
+
+    const text = chatCompletion.choices[0]?.message?.content || "Keep training.";
 
     return NextResponse.json({ insight: text });
   } catch (error) {

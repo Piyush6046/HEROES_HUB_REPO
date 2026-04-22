@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { useGlobalData } from "@/context/DataContext";
+import toast from "react-hot-toast";
 
 export default function Admin() {
   const { 
@@ -77,14 +78,14 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      alert("Published! Detected " + data.winners + " winners.");
+      toast.success("Published! Detected " + data.winners + " winners.");
       setSimulatedDraw(null);
       
       // Refresh all related data globally
       await refreshData();
     } catch (err) {
       console.error("Publish Failed:", err);
-      alert("Error: " + err.message);
+      toast.error("Error: " + err.message);
     }
 
     setPublishing(false);
@@ -104,13 +105,13 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.error) {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       } else {
-        alert(data.message);
+        toast.success(data.message);
         await refreshData();
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast.error("Error: " + error.message);
     }
   };
 
@@ -132,9 +133,20 @@ export default function Admin() {
   };
 
   const deleteCharity = async (id) => {
-    if (!confirm("Are you sure?")) return;
-    await supabase.from("charities").delete().eq("id", id);
-    setCharities(charities.filter(c => c.id !== id));
+    toast((t) => (
+      <div>
+        <p style={{marginBottom: "10px", fontSize:"14px"}}>Are you sure?</p>
+        <div style={{display:"flex", gap:"10px", justifyContent:"flex-end"}}>
+          <button className="btn btn-secondary btn-sm" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={async () => {
+            toast.dismiss(t.id);
+            await supabase.from("charities").delete().eq("id", id);
+            setCharities(charities.filter(c => c.id !== id));
+            toast.success("Charity deleted.");
+          }}>Yes</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   // Calculate actual revenue based on subscription plans (only from active users)

@@ -1,68 +1,54 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import Sidebar from "@/components/Sidebar";
 import {
-  Trophy, Target, Calendar, Users, ChevronDown, ChevronUp,
-  Award, CheckCircle, Clock, X, TrendingUp, Filter,
-  Download, Eye, Zap, BarChart3, Activity, DollarSign,
-  ArrowRight, Sparkles, Star, ShieldCheck, Search
+  Trophy, Target, Calendar, ChevronDown, ChevronUp,
+  Award, CheckCircle, DollarSign,
+  Download, Eye, Activity, ArrowRight, Sparkles, ShieldCheck, Search, Filter
 } from "lucide-react";
+import { useGlobalData } from "@/context/DataContext";
 
 function DrawBall({ num, delay = 0, size = "md", active = false }) {
-  const sizeClasses = {
-    sm: { w: "32px", h: "32px", font: "14px" },
-    md: { w: "48px", h: "48px", font: "18px" },
-    lg: { w: "64px", h: "64px", font: "24px" }
+  const sizes = {
+    sm: { w: "32px", h: "32px", font: "13px" },
+    md: { w: "50px", h: "50px", font: "18px" },
+    lg: { w: "68px", h: "68px", font: "26px" },
   };
-
-  const dim = sizeClasses[size] || sizeClasses.md;
+  const dim = sizes[size] || sizes.md;
 
   return (
-    <div
-      className={`draw-ball ${active ? 'active' : ''}`}
-      style={{
-        animationDelay: delay + "s",
-        width: dim.w,
-        height: dim.h,
-        fontSize: dim.font,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: "50%",
-        fontWeight: 900,
-        fontFamily: "'Outfit', sans-serif",
-        background: active
-          ? "linear-gradient(135deg, var(--gold-400), var(--gold-500))"
-          : "linear-gradient(135deg, var(--green-500), var(--green-600))",
-        color: "white",
-        boxShadow: active
-          ? "0 0 25px rgba(245, 158, 11, 0.4)"
-          : "0 0 20px rgba(16, 185, 129, 0.3)",
-        border: "2px solid rgba(255,255,255,0.2)",
-        position: "relative",
-        overflow: "hidden"
-      }}
+    <div style={{
+      width: dim.w, height: dim.h, fontSize: dim.font,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      borderRadius: "50%", fontWeight: 900, fontFamily: "'Outfit', sans-serif",
+      background: active
+        ? "linear-gradient(135deg, var(--gold-400), var(--gold-500))"
+        : "linear-gradient(135deg, var(--green-500), var(--green-600))",
+      color: "white",
+      boxShadow: active ? "0 0 28px rgba(251,191,36,0.55)" : "0 0 20px rgba(16,185,129,0.35)",
+      border: "2px solid rgba(255,255,255,0.18)",
+      position: "relative", overflow: "hidden",
+      animation: `ballPop 0.45s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both`,
+      transition: "all 0.3s ease",
+      flexShrink: 0,
+    }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.15) rotate(5deg)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
     >
       <div style={{ position: "relative", zIndex: 2 }}>{num}</div>
-      <div style={{
-        position: "absolute",
-        top: 0, left: 0,
-        width: "100%", height: "50%",
-        background: "rgba(255,255,255,0.1)",
-        borderRadius: "50% 50% 0 0"
-      }}></div>
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", background: "rgba(255,255,255,0.12)", borderRadius: "50% 50% 0 0" }} />
     </div>
   );
 }
 
-import { useGlobalData } from "@/context/DataContext";
-
 export default function Draws() {
   const { draws, scores: userScores, loading } = useGlobalData();
-  const [expanded, setExpanded] = useState(null);
+  const [expanded, setExpanded]       = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy]           = useState("date");
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => { const t = setTimeout(() => setPageVisible(true), 60); return () => clearTimeout(t); }, []);
 
   const countMatches = (winningNums, userScs) => {
     if (!winningNums || !userScs) return 0;
@@ -71,35 +57,29 @@ export default function Draws() {
   };
 
   const getTierInfo = (matches) => {
-    if (matches >= 5) return { color: "#10b981", text: "5-Match Jackpot!", icon: <Trophy size={20} />, bg: "rgba(16,185,129,0.1)" };
-    if (matches >= 4) return { color: "#fbbf24", text: "4-Match Prize", icon: <Award size={20} />, bg: "rgba(251,191,36,0.1)" };
-    if (matches >= 3) return { color: "#3b82f6", text: "3-Match Entry", icon: <Award size={20} />, bg: "rgba(59,130,246,0.1)" };
-    return { color: "#64748b", text: "No Match", icon: <Target size={20} />, bg: "rgba(100,116,139,0.1)" };
+    if (matches >= 5) return { color: "#10b981", text: "5-Match Jackpot! 🏆", bg: "rgba(16,185,129,0.1)",  icon: <Trophy size={22} color="#10b981" /> };
+    if (matches >= 4) return { color: "#fbbf24", text: "4-Match Prize 🥇",   bg: "rgba(251,191,36,0.1)",  icon: <Award size={22} color="#fbbf24" /> };
+    if (matches >= 3) return { color: "#3b82f6", text: "3-Match Entry 🎯",   bg: "rgba(59,130,246,0.1)",  icon: <Award size={22} color="#3b82f6" /> };
+    return            { color: "#64748b",  text: "No Match",              bg: "rgba(100,116,139,0.08)", icon: <Target size={22} color="#64748b" /> };
   };
 
-  const filteredDraws = draws.filter(draw => {
-    if (filterStatus === "all") return true;
-    return draw.status === filterStatus;
-  });
-
+  const filteredDraws = draws.filter(d => filterStatus === "all" ? true : d.status === filterStatus);
   const sortedDraws = [...filteredDraws].sort((a, b) => {
-    switch (sortBy) {
-      case "date": return new Date(b.month_year) - new Date(a.month_year);
-      case "prize": return (b.total_pool || 0) - (a.total_pool || 0);
-      case "matches":
-        const aMatches = userScores.length > 0 ? countMatches(a.winning_numbers, userScores) : 0;
-        const bMatches = userScores.length > 0 ? countMatches(b.winning_numbers, userScores) : 0;
-        return bMatches - aMatches;
-      default: return 0;
+    if (sortBy === "date")    return new Date(b.month_year) - new Date(a.month_year);
+    if (sortBy === "prize")   return (b.total_pool || 0) - (a.total_pool || 0);
+    if (sortBy === "matches") {
+      const aM = countMatches(a.winning_numbers, userScores);
+      const bM = countMatches(b.winning_numbers, userScores);
+      return bM - aM;
     }
+    return 0;
   });
 
   if (loading) return (
-    <div className="flex-center" style={{ height: "calc(100vh - 80px)" }}>
-      <div className="animate-pulse" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-        <Trophy size={48} color="var(--text-3)" />
-        <div style={{ color: "var(--text-3)", fontSize: "14px", fontWeight: 600 }}>Curating the prize draws...</div>
-      </div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: "20px" }}>
+      <div style={{ width: "48px", height: "48px", border: "3px solid var(--border-default)", borderTopColor: "var(--green-500)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ color: "var(--text-3)", fontSize: "14px", fontWeight: 600 }}>Curating prize draws…</div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
     </div>
   );
 
@@ -108,126 +88,87 @@ export default function Draws() {
   const latestTier = getTierInfo(userMatchesLatest);
 
   return (
-    <>
-      {/* Decorative Background Elements */}
-      <div style={{ position: "absolute", top: "-100px", right: "-50px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }}></div>
+    <div style={{ opacity: pageVisible ? 1 : 0, transform: pageVisible ? "none" : "translateY(12px)", transition: "all 0.5s ease" }}>
+      {/* Background glow */}
+      <div style={{ position: "fixed", top: "-200px", right: "-100px", width: "500px", height: "500px", background: "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }} />
 
+      {/* Header */}
       <header style={{ position: "relative", zIndex: 1, marginBottom: "40px" }}>
-        <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-              <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(16,185,129,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Trophy size={18} color="var(--green-500)" />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "rgba(16,185,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Trophy size={15} color="var(--green-500)" />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--green-500)" }}>Prize Center</span>
+              <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", color: "var(--green-500)" }}>Prize Center</span>
             </div>
             <h1 className="page-title">Luck of the Course</h1>
             <p className="page-subtitle">Your monthly prize draws and score matching results</p>
           </div>
-          <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "400px" }} className="flex-mobile-stack">
-            <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }}>
-              <Download size={16} /> Export
-            </button>
-            <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }}>
-              <Sparkles size={16} /> How it works
-            </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button className="btn btn-ghost" style={{ gap: "8px" }}><Download size={15} /> Export</button>
+            <button className="btn btn-primary" style={{ gap: "8px", background: "linear-gradient(135deg,var(--green-500),#059669)" }}><Sparkles size={15} /> How It Works</button>
           </div>
         </div>
       </header>
 
-      {/* Featured Latest Draw Section */}
+      {/* Featured Latest Draw */}
       {latestDraw && (
-        <section className="card" style={{
+        <section style={{
           marginBottom: "40px",
+          background: "var(--bg-surface)",
+          borderRadius: "var(--r-xl)",
           border: "1px solid var(--border-green)",
-          background: "linear-gradient(135deg, var(--bg-surface), var(--bg-base))",
-          padding: "0",
-          overflow: "hidden"
+          overflow: "hidden",
+          boxShadow: "0 0 60px rgba(16,185,129,0.08)",
+          animation: "fadeUp 0.5s ease",
         }}>
-          <div className="grid-draw-featured">
-            <style jsx>{`
-              .grid-draw-featured {
-                display: grid;
-                grid-template-columns: 1fr 350px;
-                gap: 0;
-              }
-              @media (max-width: 1024px) {
-                .grid-draw-featured {
-                  grid-template-columns: 1fr;
-                }
-              }
-            `}</style>
-            <div style={{ padding: "clamp(20px, 5vw, 32px)", position: "relative" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-                <span className="badge badge-green">LATEST DRAW</span>
-                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-2)" }}>{latestDraw.month_year}</span>
-              </div>
-
-              <h2 style={{ fontSize: "28px", marginBottom: "32px" }}>Winning Numbers</h2>
-
-              <div style={{ display: "flex", gap: "16px", marginBottom: "40px", flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px" }} className="draw-featured-grid">
+            <div style={{ padding: "clamp(20px,5vw,40px)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "100%", opacity: 0.05, backgroundImage: "url('https://images.unsplash.com/photo-1593118247619-e2d6f056869e?auto=format&fit=crop&w=800&q=80')", backgroundSize: "cover", mixBlendMode: "overlay" }} />
+              <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "300px", height: "300px", background: "radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%)", pointerEvents: "none", animation: "float 6s ease-in-out infinite" }} />
+              
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+                  <span className="badge badge-green" style={{ animation: "pulse 2s ease-in-out infinite" }}>● LATEST DRAW</span>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-2)" }}>{latestDraw.month_year}</span>
+                </div>
+                <h2 style={{ fontSize: "26px", marginBottom: "32px", color: "var(--text-0)" }}>Winning Numbers</h2>
+              <div style={{ display: "flex", gap: "14px", marginBottom: "40px", flexWrap: "wrap" }}>
                 {latestDraw.winning_numbers.map((num, i) => (
-                  <DrawBall
-                    key={i}
-                    num={num}
-                    delay={i * 0.1}
-                    size="lg"
-                    active={userScores.some(s => s.score === num)}
-                  />
+                  <DrawBall key={i} num={num} delay={i * 0.1} size="lg" active={userScores.some(s => s.score === num)} />
                 ))}
               </div>
-
-              <div className="grid-3" style={{ gap: "24px" }}>
-                <div>
-                  <div style={{ fontSize: "12px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px" }}>5-Match Jackpot</div>
-                  <div style={{ fontSize: "24px", fontWeight: 900, color: "var(--green-400)", fontFamily: "'Outfit'" }}>
-                    ${latestDraw.prize_pool_5match?.toLocaleString() || "0"}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+                {[
+                  { label: "5-Match Jackpot", val: latestDraw.prize_pool_5match, color: "var(--green-400)" },
+                  { label: "4-Match Pool",    val: latestDraw.prize_pool_4match, color: "var(--gold-400)" },
+                  { label: "3-Match Pool",    val: latestDraw.prize_pool_3match, color: "var(--blue-400)" },
+                ].map((p, i) => (
+                  <div key={i} style={{ padding: "16px", background: "var(--bg-raised)", borderRadius: "14px", border: "1px solid var(--border-subtle)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "8px" }}>{p.label}</div>
+                    <div style={{ fontSize: "22px", fontWeight: 900, color: p.color, fontFamily: "Outfit", letterSpacing: "-1px" }}>
+                      ${p.val?.toLocaleString() || "0"}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "12px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px" }}>4-Match Pool</div>
-                  <div style={{ fontSize: "24px", fontWeight: 900, color: "var(--gold-400)", fontFamily: "'Outfit'" }}>
-                    ${latestDraw.prize_pool_4match?.toLocaleString() || "0"}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "12px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px" }}>3-Match Pool</div>
-                  <div style={{ fontSize: "24px", fontWeight: 900, color: "var(--blue-400)", fontFamily: "'Outfit'" }}>
-                    ${latestDraw.prize_pool_3match?.toLocaleString() || "0"}
-                  </div>
-                </div>
+                ))}
+              </div>
               </div>
             </div>
 
-            <div style={{
-              background: "rgba(16,185,129,0.03)",
-              borderLeft: "1px solid var(--border-default)",
-              padding: "clamp(20px, 5vw, 32px)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              textAlign: "center"
-            }}>
-              <div style={{
-                width: "80px", height: "80px",
-                borderRadius: "50%",
-                background: latestTier.bg,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 20px"
-              }}>
+            <div style={{ borderLeft: "1px solid var(--border-subtle)", padding: "40px 32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", background: `linear-gradient(180deg, ${latestTier.bg}, transparent)` }}>
+              <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: latestTier.bg, border: `2px solid ${latestTier.color}44`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: `0 0 24px ${latestTier.color}33`, animation: "scaleIn 0.5s cubic-bezier(0.16,1,0.3,1)" }}>
                 {latestTier.icon}
               </div>
-              <h3 style={{ fontSize: "20px", marginBottom: "8px" }}>Your Result</h3>
-              <div style={{ fontSize: "24px", fontWeight: 800, color: latestTier.color, marginBottom: "12px" }}>
-                {latestTier.text}
-              </div>
-              <p style={{ fontSize: "14px", color: "var(--text-3)", lineHeight: 1.5, marginBottom: "24px" }}>
+              <h3 style={{ fontSize: "18px", marginBottom: "8px" }}>Your Result</h3>
+              <div style={{ fontSize: "20px", fontWeight: 800, color: latestTier.color, marginBottom: "12px" }}>{latestTier.text}</div>
+              <p style={{ fontSize: "13px", color: "var(--text-3)", lineHeight: 1.6, marginBottom: "24px" }}>
                 {userMatchesLatest > 0
-                  ? `Congratulations! You matched ${userMatchesLatest} numbers in the ${latestDraw.month_year} draw.`
-                  : "No matches this time. Keep playing to increase your chances for next month!"}
+                  ? `Congratulations! You matched ${userMatchesLatest} number${userMatchesLatest > 1 ? "s" : ""} in the ${latestDraw.month_year} draw.`
+                  : "No matches this time. Keep playing to increase your chances!"}
               </p>
-              <button className="btn btn-secondary" style={{ width: "100%" }}>
-                Claim Winnings <ArrowRight size={16} />
+              <button className="btn btn-secondary" style={{ width: "100%", borderRadius: "10px" }}>
+                Claim Winnings <ArrowRight size={15} />
               </button>
             </div>
           </div>
@@ -237,26 +178,12 @@ export default function Draws() {
       {/* Stats Grid */}
       <div className="grid-4 mb-10">
         {[
-          { label: "Total Lifetime Pool", val: `$${draws.reduce((sum, d) => sum + (d.total_pool || 0), 0).toLocaleString()}`, icon: DollarSign, color: "var(--green-500)", bg: "rgba(16,185,129,0.1)" },
-          { label: "Completed Draws", val: draws.filter(d => d.status === 'completed').length, icon: CheckCircle, color: "var(--blue-500)", bg: "rgba(59,130,246,0.1)" },
-          {
-            label: "Your Best Match",
-            val: draws.length > 0 && userScores.length > 0
-              ? `${Math.max(...draws.map(d => countMatches(d.winning_numbers, userScores)), 0)} Matches`
-              : "0 Matches",
-            icon: Award,
-            color: "var(--gold-500)",
-            bg: "rgba(245,158,11,0.1)"
-          },
-          {
-            label: "Lifetime Performance",
-            val: `${userScores.reduce((sum, s) => sum + (s.score || 0), 0)} pts`,
-            icon: Activity,
-            color: "var(--rose-500)",
-            bg: "rgba(244,63,94,0.1)"
-          }
+          { label: "Total Lifetime Pool",    val: `$${draws.reduce((s, d) => s + (d.total_pool || 0), 0).toLocaleString()}`, icon: DollarSign, color: "var(--green-500)", bg: "rgba(16,185,129,0.1)" },
+          { label: "Completed Draws",        val: draws.filter(d => d.status === "completed").length, icon: CheckCircle, color: "var(--blue-500)", bg: "rgba(59,130,246,0.1)" },
+          { label: "Your Best Match",        val: draws.length > 0 && userScores.length > 0 ? `${Math.max(...draws.map(d => countMatches(d.winning_numbers, userScores)), 0)} Matches` : "0 Matches", icon: Award, color: "var(--gold-500)", bg: "rgba(245,158,11,0.1)" },
+          { label: "Lifetime Performance",   val: `${userScores.reduce((s, sc) => s + (sc.score || 0), 0)} pts`, icon: Activity, color: "var(--rose-500)", bg: "rgba(244,63,94,0.1)" },
         ].map((s, i) => (
-          <div key={i} className="stat-card">
+          <div key={i} className="stat-card" style={{ animation: `fadeUp 0.4s ease ${i * 0.07}s both` }}>
             <div className="stat-card-icon" style={{ background: s.bg }}><s.icon size={22} color={s.color} /></div>
             <div className="stat-card-value">{s.val}</div>
             <div className="stat-card-label">{s.label}</div>
@@ -264,133 +191,136 @@ export default function Draws() {
         ))}
       </div>
 
-      <div style={{ maxWidth: "1100px", marginLeft: "0px" }}>
-        {/* Historical Draws */}
-        <div>
-          <div className="flex-mobile-stack" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px", gap: "20px" }}>
-            <h3 style={{ fontSize: "24px", fontWeight: 800 }}>Historical Archive</h3>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", width: "100%", maxWidth: "400px" }}>
-              <div style={{ position: "relative", flex: 1, minWidth: "120px" }}>
-                <Filter size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
-                <select className="input" style={{ width: "100%", paddingLeft: "36px" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                  <option value="all">All Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                </select>
-              </div>
-              <select className="input" style={{ flex: 1.5, minWidth: "160px" }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                <option value="date">Most Recent First</option>
-                <option value="prize">Highest Prize Pool</option>
-                <option value="matches">Most Matchings</option>
+      {/* Historical Archive */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px", flexWrap: "wrap", gap: "16px" }}>
+          <h3 style={{ fontSize: "22px", fontWeight: 800 }}>Historical Archive</h3>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div style={{ position: "relative" }}>
+              <Filter size={14} style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} />
+              <select className="input" style={{ paddingLeft: "32px", paddingRight: "12px" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
               </select>
             </div>
+            <select className="input" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+              <option value="date">Most Recent</option>
+              <option value="prize">Highest Prize</option>
+              <option value="matches">Most Matches</option>
+            </select>
           </div>
+        </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {sortedDraws.length === 0 ? (
-              <div className="card flex-center" style={{ padding: "80px", background: "transparent", borderStyle: "dashed" }}>
-                <div style={{ textAlign: "center" }}>
-                  <Search size={48} color="var(--text-3)" style={{ marginBottom: "20px", opacity: 0.3 }} />
-                  <div style={{ fontSize: "16px", color: "var(--text-3)" }}>No draws found matching your criteria.</div>
-                </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {sortedDraws.length === 0 ? (
+            <div className="card flex-center" style={{ padding: "80px", borderStyle: "dashed", background: "transparent" }}>
+              <div style={{ textAlign: "center" }}>
+                <Search size={44} color="var(--text-3)" style={{ marginBottom: "16px", opacity: 0.3 }} />
+                <div style={{ color: "var(--text-3)", fontSize: "15px" }}>No draws matching your criteria.</div>
               </div>
-            ) : (
-              sortedDraws.map(draw => {
-                const matches = countMatches(draw.winning_numbers, userScores);
-                const isExpanded = expanded === draw.id;
+            </div>
+          ) : sortedDraws.map((draw, idx) => {
+            const matches  = countMatches(draw.winning_numbers, userScores);
+            const tier     = getTierInfo(matches);
+            const isExpanded = expanded === draw.id;
 
-                return (
-                  <div key={draw.id} className="card animate-fade-up" style={{ padding: "0", cursor: "pointer", transition: "transform 0.2s ease" }} onClick={() => setExpanded(isExpanded ? null : draw.id)}>
-                    <div style={{ padding: "clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px)" }}>
-                      <div className="flex-mobile-stack" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                          <div className="desktop-only" style={{ width: "56px", height: "56px", borderRadius: "16px", background: "var(--bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-subtle)" }}>
-                            <Calendar size={24} color="var(--text-2)" />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: "18px", fontWeight: 800 }}>{draw.month_year}</div>
-                            <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
-                              <span className={`badge ${draw.status === 'completed' ? 'badge-green' : 'badge-rose'}`} style={{ fontSize: "11px", fontWeight: 700 }}>
-                                {draw.status.toUpperCase()}
-                              </span>
-                              <span className="badge badge-indigo" style={{ fontSize: "11px", fontWeight: 700 }}>
-                                {draw.draw_type.toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex-between" style={{ gap: "clamp(16px, 5vw, 40px)", alignItems: "center", width: "100%", justifyContent: "flex-end" }}>
-                          <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Prize Pool</div>
-                            <div style={{ fontSize: "16px", fontWeight: 900, color: "var(--green-400)" }}>${draw.total_pool?.toLocaleString() || "0"}</div>
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Matched</div>
-                            <div style={{ fontSize: "16px", fontWeight: 900, color: getTierInfo(matches).color }}>
-                              {matches} Balls
-                            </div>
-                          </div>
-                          <button className="btn btn-icon" style={{ background: "var(--bg-raised)", border: "1px solid var(--border-subtle)", borderRadius: "10px", width: "40px", height: "40px" }}>
-                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                          </button>
+            return (
+              <div key={draw.id} style={{
+                background: "var(--bg-surface)", borderRadius: "var(--r-lg)",
+                border: `1px solid ${isExpanded ? "var(--border-strong)" : "var(--border-default)"}`,
+                overflow: "hidden", cursor: "pointer",
+                transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)",
+                animation: `fadeUp 0.4s ease ${idx * 0.05}s both`,
+                boxShadow: isExpanded ? "0 8px 40px rgba(0,0,0,0.3)" : "var(--shadow-card)",
+              }}
+                onClick={() => setExpanded(isExpanded ? null : draw.id)}
+                onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
+              >
+                <div style={{ padding: "20px 28px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+                      <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "var(--bg-raised)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-subtle)", flexShrink: 0 }}>
+                        <Calendar size={20} color="var(--text-2)" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "17px", fontWeight: 800, marginBottom: "6px" }}>{draw.month_year}</div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <span className={`badge ${draw.status === "completed" ? "badge-green" : "badge-rose"}`}>{draw.status.toUpperCase()}</span>
+                          <span className="badge badge-indigo">{draw.draw_type?.toUpperCase()}</span>
                         </div>
                       </div>
                     </div>
 
-                    {isExpanded && (
-                      <div style={{ padding: "0 32px 32px", borderTop: "1px solid var(--border-subtle)", marginTop: "0", background: "rgba(255,255,255,0.01)" }}>
-                        <div style={{ paddingTop: "32px" }}>
-                          <div style={{ marginBottom: "20px", fontSize: "14px", fontWeight: 700, color: "var(--text-2)" }}>WINNING COMBINATION</div>
-                          <div style={{ display: "flex", gap: "16px", marginBottom: "32px" }}>
-                            {draw.winning_numbers.map((num, i) => (
-                              <DrawBall key={i} num={num} size="md" active={userScores.some(s => s.score === num)} />
-                            ))}
-                          </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Prize Pool</div>
+                        <div style={{ fontSize: "17px", fontWeight: 900, color: "var(--green-400)", fontFamily: "Outfit" }}>${draw.total_pool?.toLocaleString() || "0"}</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Matched</div>
+                        <div style={{ fontSize: "17px", fontWeight: 900, color: tier.color, fontFamily: "Outfit" }}>{matches} Balls</div>
+                      </div>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--bg-raised)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.3s ease", transform: isExpanded ? "rotate(180deg)" : "none" }}>
+                        <ChevronDown size={18} color="var(--text-2)" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "32px" }}>
-                            <div style={{ padding: "20px", background: "var(--bg-raised)", borderRadius: "16px", border: "1px solid var(--border-subtle)" }}>
-                              <div style={{ fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px", fontWeight: 700 }}>Jackpot (5-Match)</div>
-                              <div style={{ fontSize: "20px", fontWeight: 900 }}>${draw.prize_pool_5match?.toLocaleString()}</div>
-                            </div>
-                            <div style={{ padding: "20px", background: "var(--bg-raised)", borderRadius: "16px", border: "1px solid var(--border-subtle)" }}>
-                              <div style={{ fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px", fontWeight: 700 }}>4-Match Pool</div>
-                              <div style={{ fontSize: "20px", fontWeight: 900 }}>${draw.prize_pool_4match?.toLocaleString()}</div>
-                            </div>
-                            <div style={{ padding: "20px", background: "var(--bg-raised)", borderRadius: "16px", border: "1px solid var(--border-subtle)" }}>
-                              <div style={{ fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "8px", fontWeight: 700 }}>Entry Pool (3-Match)</div>
-                              <div style={{ fontSize: "20px", fontWeight: 900 }}>${draw.prize_pool_3match?.toLocaleString()}</div>
-                            </div>
+                {/* Expanded Detail */}
+                {isExpanded && (
+                  <div style={{ padding: "0 28px 28px", borderTop: "1px solid var(--border-subtle)", animation: "fadeUp 0.3s ease" }}>
+                    <div style={{ paddingTop: "24px" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>Winning Combination</div>
+                      <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
+                        {draw.winning_numbers.map((num, i) => (
+                          <DrawBall key={i} num={num} delay={i * 0.08} size="md" active={userScores.some(s => s.score === num)} />
+                        ))}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
+                        {[
+                          { label: "Jackpot (5-Match)", val: draw.prize_pool_5match, color: "var(--green-400)" },
+                          { label: "4-Match Pool",      val: draw.prize_pool_4match, color: "var(--gold-400)" },
+                          { label: "3-Match Pool",      val: draw.prize_pool_3match, color: "var(--blue-400)" },
+                        ].map((p, i) => (
+                          <div key={i} style={{ padding: "16px", background: "var(--bg-raised)", borderRadius: "12px", border: "1px solid var(--border-subtle)" }}>
+                            <div style={{ fontSize: "11px", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "6px", fontWeight: 700 }}>{p.label}</div>
+                            <div style={{ fontSize: "19px", fontWeight: 900, color: p.color, fontFamily: "Outfit" }}>${p.val?.toLocaleString()}</div>
                           </div>
-
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "rgba(16,185,129,0.05)", borderRadius: "12px", border: "1px solid rgba(16,185,129,0.1)" }}>
-                            <div style={{ display: "flex", gap: "32px" }}>
-                              <div>
-                                <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px" }}>Published On</div>
-                                <div style={{ fontSize: "14px", color: "var(--text-1)", fontWeight: 600 }}>{draw.published_at ? new Date(draw.published_at).toLocaleDateString() : "N/A"}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "4px" }}>Verification</div>
-                                <div style={{ fontSize: "14px", color: "var(--text-0)", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}>
-                                  <ShieldCheck size={16} color="var(--green-500)" /> Verified Result
-                                </div>
-                              </div>
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: "rgba(16,185,129,0.04)", borderRadius: "12px", border: "1px solid rgba(16,185,129,0.12)" }}>
+                        <div style={{ display: "flex", gap: "28px" }}>
+                          <div>
+                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "3px" }}>Published On</div>
+                            <div style={{ fontSize: "13px", color: "var(--text-1)", fontWeight: 600 }}>{draw.published_at ? new Date(draw.published_at).toLocaleDateString() : "N/A"}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "11px", color: "var(--text-3)", marginBottom: "3px" }}>Verification</div>
+                            <div style={{ fontSize: "13px", color: "var(--text-0)", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}>
+                              <ShieldCheck size={14} color="var(--green-500)" /> Verified Result
                             </div>
-                            <button className="btn btn-secondary btn-sm" style={{ gap: "8px" }}>
-                              <Eye size={16} /> Detailed Breakdown
-                            </button>
                           </div>
                         </div>
+                        <button className="btn btn-secondary btn-sm" style={{ gap: "6px" }} onClick={e => e.stopPropagation()}>
+                          <Eye size={14} /> Breakdown
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                );
-              })
-            )}
-          </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
-    </>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 1000px) { .draw-featured-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+    </div>
   );
 }
-

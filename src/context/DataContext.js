@@ -16,7 +16,7 @@ export function DataProvider({ children }) {
     profile: null
   });
   const [loading, setLoading] = useState(true);
-  const initialFetchDone = useRef(false);
+  const fetchingRef = useRef(false);
 
   // Manual setters for specific data updates (used in Admin actions)
   const setScores = (scores) => setData(prev => ({ ...prev, scores }));
@@ -30,30 +30,27 @@ export function DataProvider({ children }) {
       setLoading(false);
       return;
     }
-    
-    // Only show loading spinner on initial load if no profile exists
-    if (!data.profile) setLoading(true);
+    // Prevent duplicate concurrent fetches (React Strict Mode double-invoke guard)
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
+    setLoading(true);
     
     try {
-      // Build queries
       const queryList = [
         supabase.from("scores").select("*").eq("user_id", user.id).order("date_played", { ascending: false }),
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("draws").select("*").order("month_year", { ascending: false }),
         supabase.from("charities").select("*"),
-        // User-specific winners
         supabase.from("winners").select("*, draws(month_year), profiles(*)").eq("user_id", user.id).order("created_at", { ascending: false })
       ];
 
-      // ONLY fetch all users and all winners if the user is an admin
       if (role?.toLowerCase() === "admin") {
         queryList.push(supabase.from("profiles").select("*"));
         queryList.push(supabase.from("winners").select("*, draws(month_year), profiles(*)").order("created_at", { ascending: false }));
       }
 
       const results = await Promise.all(queryList);
-      
-      // Log any errors but keep going for healthy parts
       results.forEach((res, i) => {
         if (res.error) console.warn(`Global Data Query ${i} failed:`, res.error);
       });
@@ -63,7 +60,6 @@ export function DataProvider({ children }) {
       const d = results[2].data;
       const c = results[3].data;
       const userWinners = results[4].data;
-      
       let allUsers = [];
       let allWinners = userWinners || [];
 
@@ -80,32 +76,22 @@ export function DataProvider({ children }) {
         winners: allWinners,
         users: allUsers
       });
-      
-      initialFetchDone.current = true;
     } catch (err) {
       console.error("Data refresh critical failure:", err);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  }, [user, role, data.profile]);
+  }, [user, role]);
 
   useEffect(() => {
-    // Only fetch if user exists and we haven't done the initial fetch yet
-    // OR if user changes (log in/out)
     if (user) {
       refreshData();
     } else {
       setLoading(false);
-      setData({
-        scores: [],
-        draws: [],
-        charities: [],
-        winners: [],
-        users: [],
-        profile: null
-      });
+      setData({ scores: [], draws: [], charities: [], winners: [], users: [], profile: null });
     }
-  }, [user, role]); // Depend on user and role only
+  }, [user, role]);
 
   return (
     <DataContext.Provider value={{ 

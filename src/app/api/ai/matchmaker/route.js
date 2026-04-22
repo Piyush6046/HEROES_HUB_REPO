@@ -1,8 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
 
-// Force stable v1 API
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY, { apiVersion: "v1" });
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || "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"
+});
 
 export async function POST(req) {
   let charities = [];
@@ -10,8 +11,6 @@ export async function POST(req) {
     const body = await req.json();
     const userPreference = body.userPreference;
     charities = body.charities || [];
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are an AI assistant for a Golf Charity Platform. 
@@ -24,9 +23,14 @@ export async function POST(req) {
       { "id": "uuid", "name": "name", "reason": "why we picked this" }
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().replace(/```json|```/g, "").trim();
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.1-8b-instant",
+      response_format: { type: "json_object" }
+    });
+
+    const jsonMatch = chatCompletion.choices[0]?.message?.content?.match(/\{[\s\S]*\}/);
+    const text = jsonMatch ? jsonMatch[0] : "{}";
     
     return NextResponse.json(JSON.parse(text));
   } catch (error) {

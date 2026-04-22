@@ -7,6 +7,7 @@ import {
   Award, Target, Globe, Settings, Bell, Mail, Phone, MapPin, Plus, Star,
   ShieldCheck, Shuffle, Cpu, ExternalLink, Edit3
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { generateRandomDraw, generateAlgorithmicDraw } from "@/lib/drawEngine";
 
 export default function EnhancedAdminWithFunctionality() {
@@ -168,7 +169,7 @@ export default function EnhancedAdminWithFunctionality() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      alert("Published! Detected " + data.winners + " winners.");
+      toast("Published! Detected " + data.winners + " winners.");
       setSimulatedDraw(null);
       // Refresh data
       const [{ data: u }, { data: s }, { data: d }, { data: w }, { data: c }] = await Promise.all([
@@ -186,7 +187,7 @@ export default function EnhancedAdminWithFunctionality() {
       setLoading(false);
     } catch (err) {
       console.error("Publish Failed:", err);
-      alert("Error: " + err.message);
+      toast("Error: " + err.message);
     }
 
     setPublishing(false);
@@ -201,7 +202,7 @@ export default function EnhancedAdminWithFunctionality() {
       });
       const data = await res.json();
       if (data.error) {
-        alert("Error: " + data.error);
+        toast("Error: " + data.error);
       } else {
         // Optimistic UI update for instant feedback
         setWinners(prev => prev.map(w => w.id === winId ? { ...w, payout_status: status } : w));
@@ -214,7 +215,7 @@ export default function EnhancedAdminWithFunctionality() {
         if (w) setWinners(w);
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      toast("Error: " + error.message);
     }
   };
 
@@ -235,7 +236,7 @@ export default function EnhancedAdminWithFunctionality() {
 
         if (error) throw error;
         setCharities(charities.map(c => c.id === id ? { ...c, ...charityData } : c));
-        alert("Charity updated successfully!");
+        toast("Charity updated successfully!");
       } else {
         const { data, error } = await supabase
           .from("charities")
@@ -245,41 +246,53 @@ export default function EnhancedAdminWithFunctionality() {
 
         if (error) throw error;
         setCharities([...charities, data]);
-        alert("Charity added successfully!");
+        toast("Charity added successfully!");
       }
       setShowCharityModal(false);
     } catch (err) {
       console.error("Save Error:", err);
-      alert("Error saving charity: " + err.message);
+      toast("Error saving charity: " + err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const deleteCharity = async (id) => {
-    if (!confirm("Are you sure? This will remove the charity from the platform.")) return;
-    const { error } = await supabase.from("charities").delete().eq("id", id);
-    if (error) {
-      alert("Error deleting charity: " + error.message);
-    } else {
-      setCharities(charities.filter(c => c.id !== id));
-      alert("Charity deleted successfully.");
-    }
+    toast((t) => (
+      <div>
+        <p style={{marginBottom: "10px", fontSize:"14px"}}>Are you sure? This will remove the charity.</p>
+        <div style={{display:"flex", gap:"10px", justifyContent:"flex-end"}}>
+          <button className="btn btn-secondary btn-sm" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={async () => {
+            toast.dismiss(t.id);
+            const { error } = await supabase.from("charities").delete().eq("id", id);
+            if (error) { toast.error("Error deleting charity: " + error.message); }
+            else { setCharities(charities.filter(c => c.id !== id)); toast.success("Charity deleted successfully."); }
+          }}>Yes, delete</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const deleteUser = async (id, name) => {
-    if (!confirm(`Are you sure you want to delete ${name}? This action is permanent.`)) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
-    if (error) {
-      alert("Error deleting user: " + error.message);
-    } else {
-      setUsers(users.filter(u => u.id !== id));
-      alert("User removed successfully.");
-    }
+    toast((t) => (
+      <div>
+        <p style={{marginBottom: "10px", fontSize:"14px"}}>Delete {name}? This action is permanent.</p>
+        <div style={{display:"flex", gap:"10px", justifyContent:"flex-end"}}>
+          <button className="btn btn-secondary btn-sm" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={async () => {
+            toast.dismiss(t.id);
+            const { error } = await supabase.from("profiles").delete().eq("id", id);
+            if (error) { toast.error("Error deleting user: " + error.message); }
+            else { setUsers(users.filter(u => u.id !== id)); toast.success("User removed successfully."); }
+          }}>Yes, delete</button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const downloadCSV = (data, filename) => {
-    if (!data || data.length === 0) return alert("No data to export");
+    if (!data || data.length === 0) return toast("No data to export");
 
     const headers = Object.keys(data[0]);
     const csvRows = [
@@ -324,10 +337,10 @@ export default function EnhancedAdminWithFunctionality() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "400px" }} className="flex-mobile-stack">
-            <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Checking platform status...")}>
+            <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => toast("Checking platform status...")}>
               <Activity size={16} /> System Health
             </button>
-            <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Notification center opened.")}>
+            <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => toast("Notification center opened.")}>
               <Bell size={16} /> Notifications
             </button>
           </div>
@@ -382,7 +395,7 @@ export default function EnhancedAdminWithFunctionality() {
               <button
                 className="btn btn-primary"
                 style={{ gap: "8px" }}
-                onClick={() => alert("Add User feature coming soon! Currently managed via Auth.")}
+                onClick={() => toast("Add User feature coming soon! Currently managed via Auth.")}
               >
                 <Plus size={16} /> Add User
               </button>
@@ -393,10 +406,19 @@ export default function EnhancedAdminWithFunctionality() {
                 style={{ gap: "8px" }}
                 onClick={() => {
                   const pending = winners.filter(w => w.payout_status === 'pending');
-                  if (pending.length === 0) return alert("No pending winners to process.");
-                  if (confirm(`Process all ${pending.length} pending winners?`)) {
-                    pending.forEach(async (w) => await updatePayoutStatus(w.id, "processing"));
-                  }
+                  if (pending.length === 0) return toast("No pending winners to process.");
+                  toast((t) => (
+                    <div>
+                      <p style={{marginBottom: "10px", fontSize:"14px"}}>Process all {pending.length} pending winners?</p>
+                      <div style={{display:"flex", gap:"10px", justifyContent:"flex-end"}}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => toast.dismiss(t.id)}>Cancel</button>
+                        <button className="btn btn-primary btn-sm" onClick={() => {
+                          toast.dismiss(t.id);
+                          pending.forEach(async (w) => await updatePayoutStatus(w.id, "processing"));
+                        }}>Yes, process</button>
+                      </div>
+                    </div>
+                  ), { duration: Infinity });
                 }}
               >
                 <Zap size={16} /> Process All Pending
@@ -835,7 +857,7 @@ export default function EnhancedAdminWithFunctionality() {
                             className="btn btn-icon"
                             title="View Details"
                             style={{ color: "var(--blue-400)" }}
-                            onClick={() => alert(`Full audit trail for winner: ${winner.profiles?.full_name}\nPrize: ${formatCurrency(winner.prize_amount)}\nMatch: ${winner.match_type}`)}
+                            onClick={() => toast(`Full audit trail for winner: ${winner.profiles?.full_name}\nPrize: ${formatCurrency(winner.prize_amount)}\nMatch: ${winner.match_type}`)}
                           >
                             <Eye size={14} />
                           </button>
@@ -873,7 +895,7 @@ export default function EnhancedAdminWithFunctionality() {
                             className="btn btn-icon"
                             title="Send Email"
                             style={{ color: "var(--purple-400)" }}
-                            onClick={() => alert(`Email composition opened for ${winner.profiles?.email}`)}
+                            onClick={() => toast(`Email composition opened for ${winner.profiles?.email}`)}
                           >
                             <Mail size={14} />
                           </button>
@@ -1252,10 +1274,10 @@ export default function EnhancedAdminWithFunctionality() {
               </p>
             </div>
             <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "450px" }} className="flex-mobile-stack">
-              <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Preparing comprehensive PDF report...")}>
+              <button className="btn btn-ghost" style={{ gap: "8px", flex: 1 }} onClick={() => toast("Preparing comprehensive PDF report...")}>
                 <Download size={16} /> Export Full PDF
               </button>
-              <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => alert("Scheduling automatic weekly report...")}>
+              <button className="btn btn-primary" style={{ gap: "8px", flex: 1 }} onClick={() => toast("Scheduling automatic weekly report...")}>
                 <TrendingUp size={16} /> Schedule Report
               </button>
             </div>
@@ -1633,11 +1655,11 @@ export default function EnhancedAdminWithFunctionality() {
                   await supabase.from("scores").update({ score: score.score }).eq("id", score.id);
                 }
 
-                alert("User updated successfully!");
+                toast("User updated successfully!");
                 setShowUserModal(false);
                 window.location.reload(); // Refresh to show changes
               } catch (err) {
-                alert("Error updating user: " + err.message);
+                toast("Error updating user: " + err.message);
               } finally {
                 setSaving(false);
               }

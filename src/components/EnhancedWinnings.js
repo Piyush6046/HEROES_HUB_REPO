@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Trophy, Calendar, TrendingUp, ChevronDown, ChevronUp, Download, Award, ExternalLink, CheckCircle, Clock, X, Upload } from "lucide-react";
+  import { Trophy, Calendar, TrendingUp, ChevronDown, ChevronUp, Download, Award, ExternalLink, CheckCircle, Clock, X, Upload } from "lucide-react";
+import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 
 export default function EnhancedWinnings({ userId }) {
@@ -288,7 +289,7 @@ export default function EnhancedWinnings({ userId }) {
                                 });
                                 const data = await res.json();
                                 if (!data.error) {
-                                  alert('Proof uploaded successfully!');
+                                  toast.success('Proof uploaded successfully!');
                                   // Refresh winners list
                                   const { data: w } = await supabase
                                     .from("winners")
@@ -297,7 +298,7 @@ export default function EnhancedWinnings({ userId }) {
                                   setWinnings(w || []);
                                 }
                               } catch (error) {
-                                alert('Error uploading proof: ' + error.message);
+                                toast.error('Error uploading proof: ' + error.message);
                               }
                             }
                           };
