@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || "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",
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export const getAICaddyAdvice = async (scores, rank) => {
