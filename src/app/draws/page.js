@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import toast from "react-hot-toast";
 import {
   Trophy, Target, Calendar, ChevronDown, ChevronUp,
-  Award, CheckCircle, DollarSign,
-  Download, Eye, Activity, ArrowRight, Sparkles, ShieldCheck, Search, Filter
+  Award, CheckCircle, DollarSign, Clock, X as XIcon,
+  Download, Eye, Activity, ArrowRight, Sparkles, ShieldCheck, Search, Filter, Upload, ExternalLink
 } from "lucide-react";
 import { useGlobalData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 
 function DrawBall({ num, delay = 0, size = "md", active = false }) {
   const sizes = {
@@ -51,20 +53,40 @@ const drawSteps = [
 ];
 
 export default function Draws() {
-  const { draws, scores: userScores, loading } = useGlobalData();
+  const { draws, scores: userScores, winners, loading, setWinners } = useGlobalData();
+  const { user } = useAuth();
   const [expanded, setExpanded]       = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy]           = useState("date");
   const [pageVisible, setPageVisible] = useState(false);
   const [showHowModal, setShowHowModal] = useState(false);
   const [activeStep, setActiveStep]   = useState(0);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimDraw, setClaimDraw]     = useState(null); // the draw being claimed
 
   useEffect(() => { const t = setTimeout(() => setPageVisible(true), 60); return () => clearTimeout(t); }, []);
 
-  const countMatches = (winningNums, userScs) => {
+  // Only count scores logged BEFORE the draw date (prevent cheating by logging after seeing results)
+  // Uses published_at first, falls back to month_year if published_at is null
+  const getDrawCutoff = (draw) => {
+    const raw = draw?.published_at || draw?.month_year;
+    return raw ? new Date(raw) : null;
+  };
+
+  const countMatches = (winningNums, userScs, draw) => {
     if (!winningNums || !userScs) return 0;
-    const userSet = new Set(userScs.map(s => s.score));
+    const cutoff = getDrawCutoff(draw);
+    const validScores = cutoff
+      ? userScs.filter(s => new Date(s.created_at) < cutoff)
+      : userScs;
+    const userSet = new Set(validScores.map(s => s.score));
     return winningNums.filter(n => userSet.has(n)).length;
+  };
+
+  // Helper: scores valid for a specific draw (for ball highlights)
+  const validScoresFor = (draw) => {
+    const cutoff = getDrawCutoff(draw);
+    return cutoff ? userScores.filter(s => new Date(s.created_at) < cutoff) : userScores;
   };
 
   const getTierInfo = (matches) => {
@@ -79,8 +101,8 @@ export default function Draws() {
     if (sortBy === "date")    return new Date(b.month_year) - new Date(a.month_year);
     if (sortBy === "prize")   return (b.total_pool || 0) - (a.total_pool || 0);
     if (sortBy === "matches") {
-      const aM = countMatches(a.winning_numbers, userScores);
-      const bM = countMatches(b.winning_numbers, userScores);
+      const aM = countMatches(a.winning_numbers, userScores, a);
+      const bM = countMatches(b.winning_numbers, userScores, b);
       return bM - aM;
     }
     return 0;
@@ -95,11 +117,266 @@ export default function Draws() {
   );
 
   const latestDraw = draws[0];
-  const userMatchesLatest = latestDraw ? countMatches(latestDraw.winning_numbers, userScores) : 0;
+  const userMatchesLatest = latestDraw ? countMatches(latestDraw.winning_numbers, userScores, latestDraw) : 0;
   const latestTier = getTierInfo(userMatchesLatest);
 
   return (
     <div style={{ opacity: pageVisible ? 1 : 0, transform: pageVisible ? "none" : "translateY(12px)", transition: "all 0.5s ease" }}>
+
+      {/* ════ CLAIM WINNINGS MODAL ════ */}
+      {showClaimModal && claimDraw && (() => {
+        const myWin = winners?.find(w => w.draw_id === claimDraw.id && w.user_id === user?.id);
+        const matches = countMatches(claimDraw.winning_numbers, userScores, claimDraw);
+        const validScores = validScoresFor(claimDraw);
+        const tier = getTierInfo(matches);
+        const qualified = matches >= 3; // user earned a prize regardless of DB record
+        const statusColor = { paid: "#10b981", processing: "#3b82f6", pending: "#f59e0b", rejected: "#ef4444" };
+        const statusIcon = { paid: <CheckCircle size={18} />, processing: <Clock size={18} />, pending: <Clock size={18} />, rejected: <XIcon size={18} /> };
+        return (
+          <div
+            onClick={() => setShowClaimModal(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 99999,
+              background: "rgba(0,0,0,0.78)", backdropFilter: "blur(14px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "24px", animation: "fadeIn 0.25s ease",
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "28px",
+                padding: "clamp(28px, 5vw, 48px)",
+                maxWidth: "480px", width: "100%",
+                position: "relative",
+                boxShadow: myWin
+                  ? `0 0 80px ${tier.color}22, 0 40px 100px rgba(0,0,0,0.6)`
+                  : "0 0 80px rgba(100,116,139,0.1), 0 40px 100px rgba(0,0,0,0.6)",
+                animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1)",
+              }}
+            >
+              {/* Close */}
+              <button
+                onClick={() => setShowClaimModal(false)}
+                style={{
+                  position: "absolute", top: "20px", right: "20px",
+                  background: "var(--bg-base)", border: "1px solid var(--border-default)",
+                  borderRadius: "50%", width: "36px", height: "36px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "var(--text-2)", fontSize: "18px",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--border-default)"; e.currentTarget.style.color = "var(--text-0)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-base)"; e.currentTarget.style.color = "var(--text-2)"; }}
+              >✕</button>
+
+              {/* Draw badge */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "99px", padding: "4px 14px", marginBottom: "24px" }}>
+                <Trophy size={13} color="var(--green-400)" />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--green-400)" }}>{claimDraw.month_year} Draw</span>
+              </div>
+
+              {myWin ? (
+                // ── STATE 1: DB winner record exists → show payout details ──
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: tier.bg, border: `2px solid ${tier.color}55`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 24px ${tier.color}33`, flexShrink: 0 }}>
+                      {tier.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "13px", color: "var(--text-3)", marginBottom: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px" }}>Your Prize</div>
+                      <div style={{ fontSize: "32px", fontWeight: 900, fontFamily: "Outfit", color: tier.color, letterSpacing: "-2px" }}>
+                        ${myWin.prize_amount?.toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: "14px", color: "var(--text-2)", fontWeight: 600 }}>{myWin.match_type} — {tier.text}</div>
+                    </div>
+                  </div>
+
+                  {/* Payout status pill */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 18px", background: `${(statusColor[myWin.payout_status] || "#6b7280")}14`, border: `1px solid ${(statusColor[myWin.payout_status] || "#6b7280")}33`, borderRadius: "14px", marginBottom: "28px" }}>
+                    <span style={{ color: statusColor[myWin.payout_status] || "#6b7280" }}>{statusIcon[myWin.payout_status]}</span>
+                    <div>
+                      <div style={{ fontSize: "12px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>Payout Status</div>
+                      <div style={{ fontSize: "15px", fontWeight: 800, color: statusColor[myWin.payout_status] || "#6b7280", textTransform: "capitalize" }}>{myWin.payout_status}</div>
+                    </div>
+                    {myWin.payout_status === "paid" && <CheckCircle size={20} color="#10b981" style={{ marginLeft: "auto" }} />}
+                  </div>
+
+                  {/* Proof upload / view */}
+                  <div style={{ marginBottom: "28px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "12px" }}>Proof of Identity</div>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      {myWin.proof_url ? (
+                        <a href={myWin.proof_url} target="_blank" className="btn btn-secondary btn-sm" style={{ gap: "6px" }}>
+                          <ExternalLink size={13} /> View Proof
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: "13px", color: "var(--text-3)" }}>No proof uploaded yet</span>
+                      )}
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ gap: "6px" }}
+                        onClick={() => {
+                          const fileInput = document.createElement("input");
+                          fileInput.type = "file";
+                          fileInput.accept = "image/*";
+                          fileInput.onchange = async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const formData = new FormData();
+                            formData.append("winnerId", myWin.id);
+                            formData.append("file", file);
+                            try {
+                              const res = await fetch("/api/admin/upload-proof", { method: "POST", body: formData });
+                              const data = await res.json();
+                              if (!data.error) {
+                                toast.success("Proof uploaded! Admin will verify shortly.");
+                                const { data: w } = await supabase.from("winners").select("*, draws(month_year), profiles(*)").order("created_at", { ascending: false });
+                                setWinners(w || []);
+                              } else {
+                                toast.error("Upload failed: " + data.error);
+                              }
+                            } catch (err) {
+                              toast.error("Upload error: " + err.message);
+                            }
+                          };
+                          fileInput.click();
+                        }}
+                      >
+                        <Upload size={13} /> Upload Proof
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowClaimModal(false)}
+                    style={{
+                      width: "100%", padding: "14px", borderRadius: "14px",
+                      background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`,
+                      border: "none", color: "#fff", fontSize: "15px", fontWeight: 700,
+                      cursor: "pointer", boxShadow: `0 0 20px ${tier.color}44`,
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = ""}
+                  >Got it! Close</button>
+                </>
+              ) : qualified ? (
+                // ── STATE 2: user has 3+ matches but admin hasn't created DB record yet ──
+                <>
+                  <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                    <div style={{ fontSize: "64px", marginBottom: "12px", animation: "bounceIn 0.6s ease" }}>🎉</div>
+                    <h3 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "10px", color: "var(--text-0)", fontFamily: "Outfit" }}>
+                      You Qualified!
+                    </h3>
+                    <p style={{ color: "var(--text-2)", fontSize: "15px", lineHeight: 1.7 }}>
+                      You matched <strong style={{ color: tier.color }}>{matches} numbers</strong> in this draw — that's a{" "}
+                      <strong style={{ color: tier.color }}>{tier.text.replace(/[🏆🥇🎯]/g, "").trim()}</strong>!
+                    </p>
+                  </div>
+
+                  {/* Pending verification card */}
+                  <div style={{
+                    display: "flex", alignItems: "flex-start", gap: "14px",
+                    padding: "18px", borderRadius: "16px", marginBottom: "24px",
+                    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                  }}>
+                    <Clock size={22} color="#f59e0b" style={{ flexShrink: 0, marginTop: "2px" }} />
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#f59e0b", marginBottom: "4px" }}>Pending Admin Verification</div>
+                      <div style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.6 }}>
+                        Your win is being verified by the admin team. Prize payouts are processed within 3–5 business days after the draw closes. You'll see your payout status here once it's confirmed.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Matched balls summary */}
+                  <div style={{ background: "var(--bg-raised)", borderRadius: "14px", padding: "16px", marginBottom: "24px", border: "1px solid var(--border-subtle)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "12px" }}>Your Matched Numbers</div>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {claimDraw.winning_numbers.map((n, i) => {
+                        const hit = validScores.some(s => s.score === n);
+                        return (
+                          <div key={i} style={{
+                            width: "44px", height: "44px", borderRadius: "50%", fontWeight: 900, fontFamily: "Outfit", fontSize: "16px",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: hit
+                              ? "linear-gradient(135deg, var(--gold-400), var(--gold-500))"
+                              : "linear-gradient(135deg, rgba(100,116,139,0.3), rgba(100,116,139,0.15))",
+                            color: hit ? "white" : "var(--text-3)",
+                            boxShadow: hit ? "0 4px 16px rgba(251,191,36,0.45)" : "none",
+                            border: hit ? "2px solid rgba(251,191,36,0.5)" : "2px solid var(--border-subtle)",
+                            transform: hit ? "scale(1.1)" : "none",
+                          }}>{n}</div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-3)", marginTop: "10px" }}>🟡 Gold = your score matched</div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowClaimModal(false)}
+                    style={{
+                      width: "100%", padding: "14px", borderRadius: "14px",
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      border: "none", color: "#fff", fontSize: "15px", fontWeight: 700,
+                      cursor: "pointer", boxShadow: "0 0 20px rgba(245,158,11,0.35)",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = ""}
+                  >Awesome, I'll Wait! 🏆</button>
+                </>
+              ) : (
+                // ── STATE 3: genuine no win (< 3 matches) ──
+                <>
+                  <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                    <div style={{ fontSize: "56px", marginBottom: "12px" }}>🎯</div>
+                    <h3 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "10px", color: "var(--text-0)" }}>No Win This Draw</h3>
+                    <p style={{ color: "var(--text-2)", fontSize: "15px", lineHeight: 1.7 }}>
+                      {matches > 0
+                        ? `You matched ${matches} number${matches > 1 ? "s" : ""} — so close! Match 3 or more to win a prize.`
+                        : "You didn't match any winning numbers this month. Keep logging rounds to boost your odds!"}
+                    </p>
+                  </div>
+                  {/* Winning numbers reminder */}
+                  <div style={{ background: "var(--bg-raised)", borderRadius: "14px", padding: "16px", marginBottom: "24px", border: "1px solid var(--border-subtle)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "12px" }}>Winning Numbers</div>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {claimDraw.winning_numbers.map((n, i) => (
+                        <div key={i} style={{
+                          width: "40px", height: "40px", borderRadius: "50%", fontWeight: 900, fontFamily: "Outfit", fontSize: "16px",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: validScores.some(s => s.score === n)
+                            ? "linear-gradient(135deg, var(--gold-400), var(--gold-500))"
+                            : "linear-gradient(135deg, var(--green-500), var(--green-600))",
+                          color: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                        }}>{n}</div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-3)", marginTop: "10px" }}>🟡 Gold = your score matched</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      onClick={() => setShowClaimModal(false)}
+                      className="btn btn-secondary"
+                      style={{ flex: 1, borderRadius: "12px" }}
+                    >Close</button>
+                    <button
+                      onClick={() => { setShowClaimModal(false); window.location.href = "/dashboard"; }}
+                      className="btn btn-primary"
+                      style={{ flex: 2, borderRadius: "12px", background: "linear-gradient(135deg, var(--green-500), #059669)", border: "none", gap: "6px" }}
+                    ><Trophy size={15} /> Log More Rounds</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+      {/* ════ END CLAIM MODAL ════ */}
 
       {/* ════ HOW IT WORKS MODAL ════ */}
       {showHowModal && (
@@ -275,7 +552,7 @@ export default function Draws() {
                 <h2 style={{ fontSize: "26px", marginBottom: "32px", color: "var(--text-0)" }}>Winning Numbers</h2>
               <div style={{ display: "flex", gap: "14px", marginBottom: "40px", flexWrap: "wrap" }}>
                 {latestDraw.winning_numbers.map((num, i) => (
-                  <DrawBall key={i} num={num} delay={i * 0.1} size="lg" active={userScores.some(s => s.score === num)} />
+                  <DrawBall key={i} num={num} delay={i * 0.1} size="lg" active={validScoresFor(latestDraw).some(s => s.score === num)} />
                 ))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
@@ -306,7 +583,11 @@ export default function Draws() {
                   ? `Congratulations! You matched ${userMatchesLatest} number${userMatchesLatest > 1 ? "s" : ""} in the ${latestDraw.month_year} draw.`
                   : "No matches this time. Keep playing to increase your chances!"}
               </p>
-              <button className="btn btn-secondary" style={{ width: "100%", borderRadius: "10px" }}>
+              <button
+                className="btn btn-secondary"
+                style={{ width: "100%", borderRadius: "10px", cursor: "pointer" }}
+                onClick={() => { setClaimDraw(latestDraw); setShowClaimModal(true); }}
+              >
                 Claim Winnings <ArrowRight size={15} />
               </button>
             </div>
@@ -319,7 +600,7 @@ export default function Draws() {
         {[
           { label: "Total Lifetime Pool",    val: `$${draws.reduce((s, d) => s + (d.total_pool || 0), 0).toLocaleString()}`, icon: DollarSign, color: "var(--green-500)", bg: "rgba(16,185,129,0.1)" },
           { label: "Completed Draws",        val: draws.filter(d => d.status === "completed").length, icon: CheckCircle, color: "var(--blue-500)", bg: "rgba(59,130,246,0.1)" },
-          { label: "Your Best Match",        val: draws.length > 0 && userScores.length > 0 ? `${Math.max(...draws.map(d => countMatches(d.winning_numbers, userScores)), 0)} Matches` : "0 Matches", icon: Award, color: "var(--gold-500)", bg: "rgba(245,158,11,0.1)" },
+          { label: "Your Best Match",        val: draws.length > 0 && userScores.length > 0 ? `${Math.max(...draws.map(d => countMatches(d.winning_numbers, userScores, d)), 0)} Matches` : "0 Matches", icon: Award, color: "var(--gold-500)", bg: "rgba(245,158,11,0.1)" },
           { label: "Lifetime Performance",   val: `${userScores.reduce((s, sc) => s + (sc.score || 0), 0)} pts`, icon: Activity, color: "var(--rose-500)", bg: "rgba(244,63,94,0.1)" },
         ].map((s, i) => (
           <div key={i} className="stat-card" style={{ animation: `fadeUp 0.4s ease ${i * 0.07}s both` }}>
@@ -360,7 +641,7 @@ export default function Draws() {
               </div>
             </div>
           ) : sortedDraws.map((draw, idx) => {
-            const matches  = countMatches(draw.winning_numbers, userScores);
+            const matches  = countMatches(draw.winning_numbers, userScores, draw);
             const tier     = getTierInfo(matches);
             const isExpanded = expanded === draw.id;
 
@@ -415,7 +696,7 @@ export default function Draws() {
                       <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>Winning Combination</div>
                       <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
                         {draw.winning_numbers.map((num, i) => (
-                          <DrawBall key={i} num={num} delay={i * 0.08} size="md" active={userScores.some(s => s.score === num)} />
+                          <DrawBall key={i} num={num} delay={i * 0.08} size="md" active={validScoresFor(draw).some(s => s.score === num)} />
                         ))}
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
