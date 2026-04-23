@@ -11,17 +11,19 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useGlobalData } from "@/context/DataContext";
 
+// ⚠️ Keep in sync with dashboard/page.js RANK_THRESHOLDS
 const RANK_THRESHOLDS = [
-  { min: 0, label: "Beginner", color: "#94a3b8" },
-  { min: 100, label: "Amateur", color: "#10b981" },
-  { min: 300, label: "Semi-Pro", color: "#3b82f6" },
-  { min: 600, label: "Professional", color: "#8b5cf6" },
-  { min: 1000, label: "Master", color: "#f59e0b" },
-  { min: 2000, label: "Legend", color: "#f43f5e" }
+  { min: 0,    label: "Rookie",   color: "#94a3b8" },
+  { min: 150,  label: "Amateur",  color: "#60a5fa" },
+  { min: 350,  label: "Ace",      color: "#a78bfa" },
+  { min: 700,  label: "Champion", color: "#fbbf24" },
+  { min: 1200, label: "Legend",   color: "#f43f5e" },
 ];
 
 const getRank = (xp) => {
-  return [...RANK_THRESHOLDS].reverse().find(r => xp >= r.min) || RANK_THRESHOLDS[0];
+  let rank = RANK_THRESHOLDS[0];
+  for (const r of RANK_THRESHOLDS) { if (xp >= r.min) rank = r; }
+  return rank;
 };
 
 const NAV = [
