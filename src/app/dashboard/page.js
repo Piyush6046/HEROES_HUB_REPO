@@ -288,7 +288,6 @@ export default function Dashboard() {
                   <option value="7">Last 7</option>
                   <option value="10">Last 10</option>
                   <option value="15">Last 15</option>
-                  <option value="all">All</option>
                 </select>
                 <span className="badge badge-green">Showing {Math.min(scores.length, trendLimit)} rounds</span>
               </div>

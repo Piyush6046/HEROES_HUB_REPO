@@ -44,12 +44,20 @@ function DrawBall({ num, delay = 0, size = "md", active = false }) {
   );
 }
 
+const drawSteps = [
+  { n: "01", title: "Play & Log Scores", desc: "After every golf round, log your Stableford points in the dashboard. Each score you record becomes a potential lucky number in the monthly draw." },
+  { n: "02", title: "Monthly Numbers Published", desc: "At the end of each month, the Draw Engine randomly selects 5 winning numbers. These are announced here in the Prize Center for full transparency." },
+  { n: "03", title: "Match & Win", desc: "Your logged scores are automatically compared to the 5 winning numbers. Match 3 = prize pool share, 4 = gold pool, 5 = full Jackpot! 🏆" },
+];
+
 export default function Draws() {
   const { draws, scores: userScores, loading } = useGlobalData();
   const [expanded, setExpanded]       = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy]           = useState("date");
   const [pageVisible, setPageVisible] = useState(false);
+  const [showHowModal, setShowHowModal] = useState(false);
+  const [activeStep, setActiveStep]   = useState(0);
 
   useEffect(() => { const t = setTimeout(() => setPageVisible(true), 60); return () => clearTimeout(t); }, []);
 
@@ -92,6 +100,130 @@ export default function Draws() {
 
   return (
     <div style={{ opacity: pageVisible ? 1 : 0, transform: pageVisible ? "none" : "translateY(12px)", transition: "all 0.5s ease" }}>
+
+      {/* ════ HOW IT WORKS MODAL ════ */}
+      {showHowModal && (
+        <div
+          onClick={() => setShowHowModal(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 99999,
+            background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "24px",
+            animation: "fadeIn 0.25s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "28px",
+              padding: "clamp(28px, 5vw, 56px)",
+              maxWidth: "520px", width: "100%",
+              position: "relative",
+              boxShadow: "0 0 80px rgba(16,185,129,0.15), 0 40px 100px rgba(0,0,0,0.6)",
+              animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setShowHowModal(false)}
+              style={{
+                position: "absolute", top: "20px", right: "20px",
+                background: "var(--bg-base)", border: "1px solid var(--border-default)",
+                borderRadius: "50%", width: "36px", height: "36px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "var(--text-2)", fontSize: "18px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--border-default)"; e.currentTarget.style.color = "var(--text-0)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-base)"; e.currentTarget.style.color = "var(--text-2)"; }}
+            >✕</button>
+
+            {/* Progress bar */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "32px" }}>
+              {drawSteps.map((_, i) => (
+                <div key={i} style={{
+                  height: "4px", flex: 1, borderRadius: "99px",
+                  background: i <= activeStep ? "var(--green-400)" : "var(--border-default)",
+                  transition: "background 0.4s ease",
+                }} />
+              ))}
+            </div>
+
+            {/* Step number */}
+            <div style={{
+              fontSize: "72px", fontWeight: 900, fontFamily: "Outfit",
+              background: "linear-gradient(135deg, var(--green-500), #818cf8)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              letterSpacing: "-4px", lineHeight: 1, marginBottom: "20px",
+            }}>{drawSteps[activeStep].n}</div>
+
+            {/* Title */}
+            <h3 style={{ fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 800, marginBottom: "16px", color: "var(--text-0)" }}>
+              {drawSteps[activeStep].title}
+            </h3>
+
+            {/* Description */}
+            <p style={{ color: "var(--text-2)", fontSize: "16px", lineHeight: 1.8, marginBottom: "40px" }}>
+              {drawSteps[activeStep].desc}
+            </p>
+
+            {/* Navigation */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button
+                onClick={() => setActiveStep(s => Math.max(0, s - 1))}
+                disabled={activeStep === 0}
+                style={{
+                  padding: "12px 28px", borderRadius: "99px",
+                  border: "1px solid var(--border-default)",
+                  background: "transparent", color: activeStep === 0 ? "var(--text-3)" : "var(--text-1)",
+                  cursor: activeStep === 0 ? "not-allowed" : "pointer",
+                  fontSize: "15px", fontWeight: 600,
+                  transition: "all 0.2s ease",
+                  opacity: activeStep === 0 ? 0.4 : 1,
+                }}
+              >← Back</button>
+
+              <span style={{ fontSize: "13px", color: "var(--text-3)", fontWeight: 700 }}>
+                {activeStep + 1} / {drawSteps.length}
+              </span>
+
+              {activeStep < drawSteps.length - 1 ? (
+                <button
+                  onClick={() => setActiveStep(s => s + 1)}
+                  style={{
+                    padding: "12px 28px", borderRadius: "99px",
+                    background: "linear-gradient(135deg, var(--green-500), #059669)",
+                    border: "none", color: "#fff",
+                    cursor: "pointer", fontSize: "15px", fontWeight: 700,
+                    boxShadow: "0 0 20px rgba(16,185,129,0.35)",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(16,185,129,0.5)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 0 20px rgba(16,185,129,0.35)"; }}
+                >Next →</button>
+              ) : (
+                <button
+                  onClick={() => setShowHowModal(false)}
+                  style={{
+                    padding: "12px 28px", borderRadius: "99px",
+                    background: "linear-gradient(135deg, var(--green-500), #059669)",
+                    border: "none", color: "#fff",
+                    cursor: "pointer", fontSize: "15px", fontWeight: 700,
+                    boxShadow: "0 0 20px rgba(16,185,129,0.35)",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
+                >Let's Play! 🏌️</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ════ END MODAL ════ */}
       {/* Background glow */}
       <div style={{ position: "fixed", top: "-200px", right: "-100px", width: "500px", height: "500px", background: "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }} />
 
@@ -110,7 +242,11 @@ export default function Draws() {
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
             <button className="btn btn-ghost" style={{ gap: "8px" }}><Download size={15} /> Export</button>
-            <button className="btn btn-primary" style={{ gap: "8px", background: "linear-gradient(135deg,var(--green-500),#059669)" }}><Sparkles size={15} /> How It Works</button>
+            <button
+              className="btn btn-primary"
+              style={{ gap: "8px", background: "linear-gradient(135deg,var(--green-500),#059669)", cursor: "pointer" }}
+              onClick={() => { setActiveStep(0); setShowHowModal(true); }}
+            ><Sparkles size={15} /> How It Works</button>
           </div>
         </div>
       </header>
